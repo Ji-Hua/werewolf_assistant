@@ -2,4 +2,16 @@
 
 {% block content %}
     <h1>Hi, {{ current_user.username }}!</h1>
+    <p>Please indicate your role in this game</p>
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.role.label }}<br>
+            {{ form.role }}<br>
+            {% for error in form.role.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>{{ form.submit() }}</p>
+    </form>
 {% endblock %}
