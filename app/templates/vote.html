@@ -33,11 +33,16 @@
         <p>{{ form.submit() }}</p>
     </form>
     <form action="" method="post" novalidate>
-            {{ end_game_form.csrf_token }}
-            {{ end_game_form.hidden_tag() }}
-            <p>{{ end_game_form.end() }}</p>
-        </form>
+        {{ end_game_form.csrf_token }}
+        {{ end_game_form.hidden_tag() }}
+        <p>{{ end_game_form.end() }}</p>
+    </form>
     {% else %}
     <p>Non-palyer is not allowed to vote</p>
     {% endif %}
+    <form action="" method="post" novalidate>
+        {{ view_form.csrf_token }}
+        {{ view_form.hidden_tag() }}
+        <p>{{ view_form.view() }}</p>
+    </form>
 {% endblock %}

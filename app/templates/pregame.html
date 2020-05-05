@@ -21,6 +21,9 @@
     <form action="" method="post" novalidate>
         {{ form.csrf_token }}
         {{ form.hidden_tag() }}
+    {% if current_user.seat > 0 %}
+    <p>Your seat in this game is {{ current_user.seat }}</p>
+    {% else %}
     <p>
         {{ form.seat.label }}<br>
         {{ form.seat(size=2) }}<br>
@@ -28,6 +31,7 @@
         <span style="color: red;">[{{ error }}]</span>
         {% endfor %}
     </p>
+    {% endif %}
     <p>{{ form.submit() }}</p>
     </form>
     {% endif %}

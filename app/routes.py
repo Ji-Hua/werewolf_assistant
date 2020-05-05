@@ -67,6 +67,7 @@ def vote(username):
         game = Game.query.filter_by(is_active=True).order_by(
             Game.id.desc()).limit(1).all()[0]
         end_game_form = EndGameForm()
+        view_form = ViewForm()
         if current_user.role == 'God':
             form = GameForm()
             if form.validate() and form.submit.data:
@@ -77,13 +78,30 @@ def vote(username):
             if end_game_form.validate() and end_game_form.end.data:
                 game.end()
                 db.session.commit()
+                users = User.query.all()
+                for user in users:
+                    user.seat = -1
+                    db.session.commit()
                 return redirect(url_for('pregame'))
         else:
             form = VoteForm()
-            if form.validate_on_submit():
+            if form.validate() and form.submit.data:
                 flash(f"{current_user.seat} voted for {form.votefor.data}")
+                v = Vote(seat=current_user.seat, game_id=game.id,
+                    round=game.current_round, vote_for=form.votefor.data,
+                    player=current_user)
+                db.session.add(v)
+                db.session.commit()
                 return redirect(url_for('pregame'))
-        return render_template('vote.html', title='Vote', form=form, game=game, end_game_form=end_game_form)
+        
+        if view_form.validate() and view_form.view.data:
+            votes = Vote.query.filter_by(game_id=game.id).filter_by(round=game.current_round).all()
+            flash(game.id)
+            flash(game.current_round)
+            flash(votes)
+
+        return render_template('vote.html', title='Vote', form=form, game=game,
+            end_game_form=end_game_form, view_form=view_form)
     else:
         return redirect(url_for('login'))
 
@@ -104,9 +122,10 @@ def pregame():
         else:
             form = PlayerPregameForm()
             if form.validate_on_submit():
-                current_user.seat = int(form.seat.data)
-                db.session.commit()
+                if current_user.seat == 0:
+                    current_user.seat = int(form.seat.data)
+                    db.session.commit()
                 return redirect(url_for('vote', username=current_user.username))
-        return render_template('pregame.html', title='Pregame', form=form)
+        return render_template('pregame.html', title='Pregame', form=form, current_user=current_user)
     else:
         return redirect(url_for('login'))
