@@ -1,0 +1,1 @@
+web: flask db upgrade; export FLASK_APP=application.py; flask run
