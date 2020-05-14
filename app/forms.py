@@ -39,15 +39,21 @@ class VoteForm(FlaskForm):
             raise ValidationError('Please vote for a number in between 0 and 12.')
 
 
-class RoleForm(FlaskForm):
-    role_opts = [('God', 'God'), ('Player', 'Player'), ('Audience', 'Audience')]
-    role = SelectField('Role', choices=role_opts)
-    submit = SubmitField('Submit')
+class CreateGameForm(FlaskForm):
+    room_id = StringField('房间号')
+    create_game = SubmitField('创建游戏')
+    enter_game = SubmitField('进入游戏')
+    
+
+class TemplateForm(FlaskForm):
+    choices = [('预女猎白', '预女猎白')]
+    template = SelectField('游戏设置', choices=choices)
+    submit = SubmitField('开始游戏')
 
 
-class PlayerPregameForm(FlaskForm):
-    seat = StringField('Seat', validators=[DataRequired()])
-    submit = SubmitField('Enter Game')
+class SeatForm(FlaskForm):
+    seat = SelectField('选择座位', choices=[])
+    submit = SubmitField('坐下')
 
     def validate_seat(self, seat):
         seat_id = int(seat.data)

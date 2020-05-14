@@ -1,5 +1,6 @@
 <html>
     <head>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         {% if title %}
         <title>{{ title }} - ZoomKill</title>
         {% else %}
@@ -14,8 +15,8 @@
             <a href="{{ url_for('login') }}">Login</a>
             <p>New User? <a href="{{ url_for('register') }}">Click to Register!</a></p>
             {% else %}
-            <a href="{{ url_for('vote', username=current_user.username) }}">Vote</a>
             <a href="{{ url_for('logout') }}">Logout</a>
+            <p> Log in as {{ current_user.username }}　</p>
             {% endif %}
         </div>
         <hr>
@@ -29,6 +30,8 @@
         
         {% endif %}
         {% endwith %}
-        {% block content %}{% endblock %}
+        {% block content %}
+        {% endblock %}
+        
     </body>
 </html>

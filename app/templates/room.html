@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>游戏 {{ room.name }}</h1>
+    <h4>当前游戏设置为 {{ room.game.template }}</h4>
+    {% if current_user.is_host %}
+        <h3>你为本游戏的上帝</h3>
+    {% else %}
+        <form action="" method="post">
+            {{ form.csrf_token }}
+            {{ form.hidden_tag() }}
+            <p>
+                {{ form.seat.label }}
+                {{ form.seat(id='seat-select') }}
+                {% for error in form.seat.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>{{ form.submit() }}</p>
+        </form>
+    {% endif %}
+    <script>
+        var api_url = "/room/" + {{ room.name }} + "/seats";
+        $(document).ready(function() {
+            console.log(api_url);
+            $.getJSON(api_url, function(data) {
+                var optionsAsString = "";
+                for(var i = 0; i < data.seats.length; i++) {
+                    optionsAsString += "<option value='" +  data.seats[i] + "'>" +  data.seats[i] + "</option>";
+                };
+                $("#seat-select").find('option').remove().end().append($(optionsAsString));
+            });
+        });
+        
+    </script>
+{% endblock %}
+
