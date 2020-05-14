@@ -33,8 +33,8 @@ def build_character_queue(template_name):
 
 def assign_character(room_id):
     room = Room.query.filter_by(name=room_id).first()
-    seated_players = room.normal_players()
+    seated_players = room.normal_players
     char_queue = build_character_queue(room.template)
     for p in seated_players:
-        char_queue.pop(a.index(p.character))
+        char_queue.pop(char_queue.index(p.character))
     return char_queue[0]

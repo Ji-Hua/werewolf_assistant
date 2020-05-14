@@ -24,6 +24,10 @@ class User(UserMixin, db.Model):
     @property
     def is_host(self):
         return self.role.first().is_host == True
+    
+
+    def current_role(self, room_name):
+        return self.role.filter_by(room_id=room_name).first()
 
 
 @login.user_loader
@@ -40,6 +44,7 @@ class Room(db.Model):
     def __repr__(self):
         return f"{self.name}: {self.game.template}"
     
+    @property
     def host(self):
         for p in self.players:
             if p.is_host:
@@ -47,6 +52,7 @@ class Room(db.Model):
         else:
             raise ValueError('No host find')
         
+    @property
     def normal_players(self):
         players = []
         for p in self.players:
@@ -54,18 +60,21 @@ class Room(db.Model):
                 players.append(p)
         return players
     
+    @property
     def available_seats(self):
         seats = set(range(1, 13))
-        for p in self.normal_players():
+        for p in self.normal_players:
             seats -= set(p.seat)
         return seats
     
+    @property
     def is_full(self):
-        if len(self.normal_players()) == 12:
+        if len(self.normal_players == 12):
             return True
         else:
             return False
     
+    @property
     def template(self):
         return self.game.template
     
@@ -79,6 +88,11 @@ class Player(db.Model):
     is_dead = db.Column(db.Boolean, default=False)
     capable_for_vote = db.Column(db.Boolean, default=False)
     votes = db.relationship('Vote', backref='player', lazy='dynamic')
+    
+    
+    @property
+    def is_seated(self):
+        return self.seat is not None
 
 
 

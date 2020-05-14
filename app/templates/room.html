@@ -6,23 +6,27 @@
     {% if current_user.is_host %}
         <h3>你为本游戏的上帝</h3>
     {% else %}
-        <form action="" method="post">
-            {{ form.csrf_token }}
-            {{ form.hidden_tag() }}
-            <p>
-                {{ form.seat.label }}
-                {{ form.seat(id='seat-select') }}
-                {% for error in form.seat.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </p>
-            <p>{{ form.submit() }}</p>
-        </form>
+        {% if current_user.current_role(room.name).is_seated %}
+            <h3> 你的座位为 {{current_user.current_role(room.name).seat}} </h3>
+            <h3> 你的角色为 {{current_user.current_role(room.name).character}} </h3>
+        {% else %}
+            <form action="" method="post">
+                {{ seat_form.csrf_token }}
+                {{ seat_form.hidden_tag() }}
+                <p>
+                    {{ seat_form.seat.label }}
+                    {{ seat_form.seat(id='seat-select') }}
+                    {% for error in seat_form.seat.errors %}
+                        <span style="color: red;">[{{ error }}]</span>
+                    {% endfor %}
+                </p>
+                <p>{{ seat_form.submit() }}</p>
+            </form>
+        {% endif %}
     {% endif %}
     <script>
         var api_url = "/room/" + {{ room.name }} + "/seats";
         $(document).ready(function() {
-            console.log(api_url);
             $.getJSON(api_url, function(data) {
                 var optionsAsString = "";
                 for(var i = 0; i < data.seats.length; i++) {

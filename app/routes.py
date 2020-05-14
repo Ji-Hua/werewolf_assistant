@@ -6,7 +6,7 @@ from app import app, db
 from app.forms import (LoginForm, RegistrationForm, VoteForm, CreateGameForm, 
     PregameForm, GameForm, SeatForm, ViewForm, EndGameForm, TemplateForm)
 from app.models import User, Vote, Game, Room, Player
-from app.tools import random_with_N_digits
+from app.tools import random_with_N_digits, assign_character
 
 
 
@@ -99,10 +99,18 @@ def room(room_id):
         if current_user.is_host:
             return render_template('room.html', title='游戏进行中', room=room)
         else:
-            form = SeatForm()
-            if form.validate_on_submit():
+            if current_user.current_role(room_id).is_seated:
                 pass
-            return render_template('room.html', title='游戏进行中', room=room, form=form)
+                return render_template('room.html', title='游戏进行中', room=room)
+            else:
+                seat_form = SeatForm()
+                if seat_form.is_submitted():
+                    role = current_user.current_role(room_id)
+                    role.seat = int(seat_form.seat.data)
+                    role.character = assign_character(room_id)
+                    db.session.commit()
+                
+                return render_template('room.html', title='游戏进行中', room=room, seat_form=seat_form)
     else:
         return redirect(url_for('login'))
 
@@ -119,4 +127,4 @@ def vote(username):
 @login_required
 def seats(room_id):
     room = Room.query.filter_by(name=room_id).first()
-    return jsonify({'seats': list(room.available_seats())})
+    return jsonify({'seats': list(room.available_seats)})

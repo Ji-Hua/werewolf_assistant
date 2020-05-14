@@ -52,13 +52,8 @@ class TemplateForm(FlaskForm):
 
 
 class SeatForm(FlaskForm):
-    seat = SelectField('选择座位', choices=[])
+    seat = SelectField('选择座位')
     submit = SubmitField('坐下')
-
-    def validate_seat(self, seat):
-        seat_id = int(seat.data)
-        if seat_id > 12 or seat_id < 1:
-            raise ValidationError('Please fill with your seat number in between 1 and 12.')
 
 
 class PregameForm(FlaskForm):
