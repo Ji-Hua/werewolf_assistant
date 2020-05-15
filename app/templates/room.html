@@ -5,6 +5,19 @@
     <h4>当前游戏设置为 {{ room.game.template }}</h4>
     {% if current_user.is_host %}
         <h3>你为本游戏的上帝</h3>
+        <div id='player-status'>
+            <table id='player-status-table' hidden>
+            <thead>
+                <tr>
+                    <th>座位号</th>
+                    <th>玩家名</th>
+                    <th>角色名</th>
+                <tr>
+            </thead>
+            <tbody>
+            </tbody>
+            </table>
+        </div>
         {{ form.round.label }}<br>
         {{ form.round(id='round-select') }}<br>
         <input id="start-vote-button" name="submit" type="submit" value="开始投票">
