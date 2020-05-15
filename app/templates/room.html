@@ -103,7 +103,6 @@
                         url: status_api_url,
                         type: 'get',
                         success: function(response){
-                            console.log(response);
                             $("#vote-label").text( response.status);
                             if (response.status != "等待上帝指令") {
                                 $.getJSON(candidates_api_url, function(data) {
@@ -111,7 +110,6 @@
                                     for(var i = 0; i < data.candidates.length; i++) {
                                         optionsAsString += "<option value='" +  data.candidates[i] + "'>" +  data.candidates[i] + "</option>";
                                     };
-                                    console.log(optionsAsString);
                                     $("#vote-select").find('option').remove().end().append($(optionsAsString));
                                 });
                             } else {

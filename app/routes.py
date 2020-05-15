@@ -139,7 +139,6 @@ def vote(room_name):
     if player.capable_for_vote:
         game = Room.query.filter_by(name=room_name).first().game
         vote_for = int(request.form['vote_for'])
-        print(vote_for)
         if vote_for <= 0 or vote_for > 12:
             vote_for = 0
         round = request.form['round']
@@ -180,6 +179,5 @@ def candidates(room_name):
 def results(room_name, round_name):
     room = Room.query.filter_by(name=room_name).first()
     results = room.view_vote_results(round_name)
-    print(results)
     return jsonify({'results': results})
 
