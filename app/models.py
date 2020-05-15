@@ -87,6 +87,40 @@ class Room(db.Model):
     def template(self):
         return self.game.template
     
+    @property
+    def survivals(self):
+        survivals = []
+        for p in self.seated_players:
+            if not p.is_dead:
+                survivals.append(p)
+        return survivals
+    
+    def allow_votes(self):
+        for p in self.survivals:
+            p.capable_for_vote = True
+        db.session.commit()
+    
+    def disable_votes(self):
+        for p in self.survivals:
+            p.capable_for_vote = False
+        db.session.commit()
+    
+    def set_round(self, round_name):
+        self.game.current_round = round_name
+        db.session.commit()
+    
+    def view_vote_results(self, round_name):
+        results = []
+        for p in self.seated_players:
+            vote = p.votes.filter_by(round=round_name).first()
+            results.append({
+                'vote_from': vote.vote_from,
+                'vote_for': vote.vote_for,
+            })
+        return results
+            
+    
+    
 class Player(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

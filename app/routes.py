@@ -4,7 +4,7 @@ from werkzeug.urls import url_parse
 
 from app import app, db
 from app.forms import (LoginForm, RegistrationForm, VoteForm, CreateGameForm, 
-    GameForm, SeatForm, ViewForm, TemplateForm)
+    GameRoundForm, SeatForm, ViewForm, TemplateForm)
 from app.models import User, Vote, Game, Room, Player
 from app.tools import random_with_N_digits, assign_character
 
@@ -97,7 +97,8 @@ def room(room_name):
     if current_user.is_authenticated:
         room = Room.query.filter_by(name=room_name).first()
         if current_user.is_host:
-            return render_template('room.html', title='游戏进行中', room=room)
+            form = GameRoundForm()
+            return render_template('room.html', title='游戏进行中', room=room, form=form)
         else:
             if current_user.current_role(room_name).is_seated:
                 return render_template('room.html', title='游戏进行中', room=room)
@@ -124,9 +125,9 @@ def seats(room_name):
     return jsonify({'seats': room.available_seats})
 
 
-@app.route('/room/<room_name>/status', methods=['GET'])
+@app.route('/room/<room_name>/game_status', methods=['GET'])
 @login_required
-def status(room_name):
+def game_status(room_name):
     room = Room.query.filter_by(name=room_name).first()
     return jsonify({'status': room.game.status})
 
@@ -137,7 +138,8 @@ def vote(room_name):
     player = Player.query.filter_by(id=int(request.form['player_id'])).first()
     if player.capable_for_vote:
         game = Room.query.filter_by(name=room_name).first().game
-        vote_for = request.form['vote_for']
+        vote_for = int(request.form['vote_for'])
+        print(vote_for)
         if vote_for <= 0 or vote_for > 12:
             vote_for = 0
         round = request.form['round']
@@ -146,5 +148,38 @@ def vote(room_name):
         db.session.commit()
         player.capable_for_vote = False
         db.session.commit()
+        return {"vote": vote_for}
+    else:
+        return {"vote": 0}
     
     
+@app.route('/room/<room_name>/round', methods=['POST'])
+@login_required
+def round(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    if request.form['allow_vote'] == 'true':
+        round_name = request.form['round_name']
+        room.set_round(round_name)
+        room.allow_votes()
+        return {'vote': 1}
+    else:
+        room.disable_votes()
+        room.set_round('')
+        return {'vote': 0}
+    
+
+@app.route('/room/<room_name>/candidates', methods=['GET'])
+@login_required
+def candidates(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    candidates = [p.seat for p in room.survivals]
+    return jsonify({'candidates': candidates})
+
+@app.route('/room/<room_name>/results/<round_name>', methods=['GET'])
+@login_required
+def results(room_name, round_name):
+    room = Room.query.filter_by(name=room_name).first()
+    results = room.view_vote_results(round_name)
+    print(results)
+    return jsonify({'results': results})
+

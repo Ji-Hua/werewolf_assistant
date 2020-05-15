@@ -51,7 +51,7 @@ class SeatForm(FlaskForm):
     submit = SubmitField('坐下')
 
 
-class GameForm(FlaskForm):
+class GameRoundForm(FlaskForm):
     
     round_opts = [
         ('警长竞选', '警长竞选'),
@@ -67,8 +67,8 @@ class GameForm(FlaskForm):
         ('第5天放逐', '第5天放逐'),
         ('第5天放逐-pk', '第5天放逐-pk')
     ]
-    current_round = SelectField('Round', choices=round_opts, validate_choice=False)
-    submit = SubmitField('Start Vote')
+    round = SelectField('选择投票轮次', choices=round_opts, validate_choice=False)
+    
     
 
 class ViewForm(FlaskForm):
