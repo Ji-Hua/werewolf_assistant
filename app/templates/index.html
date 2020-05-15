@@ -7,9 +7,9 @@
         {{ form.csrf_token }}
         {{ form.hidden_tag() }}
         <p>
-            {{ form.room_id.label }}<br>
-            {{ form.room_id }}<br>
-            {% for error in form.room_id.errors %}
+            {{ form.room_name.label }}<br>
+            {{ form.room_name }}<br>
+            {% for error in form.room_name.errors %}
             <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>

@@ -9,6 +9,11 @@
         {% if current_user.current_role(room.name).is_seated %}
             <h3> 你的座位为 {{current_user.current_role(room.name).seat}} </h3>
             <h3> 你的角色为 {{current_user.current_role(room.name).character}} </h3>
+            <form action="" method="post">
+                <label for="vote" id="vote-label">游戏进行中</label><br>
+                <select name="vote" id="vote-select"></select>
+                <p><input id="submit" name="submit" type="submit" value="投票"></p>
+            </form>
         {% else %}
             <form action="" method="post">
                 {{ seat_form.csrf_token }}

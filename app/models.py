@@ -24,10 +24,10 @@ class User(UserMixin, db.Model):
     @property
     def is_host(self):
         return self.role.first().is_host == True
-    
 
     def current_role(self, room_name):
-        return self.role.filter_by(room_id=room_name).first()
+        room_id = Room.query.filter_by(name=room_name).first().id
+        return self.role.filter_by(room_id=room_id).first()
 
 
 @login.user_loader
@@ -64,12 +64,21 @@ class Room(db.Model):
     def available_seats(self):
         seats = set(range(1, 13))
         for p in self.normal_players:
-            seats -= set(p.seat)
-        return seats
+            if p.seat:
+                seats -= set(p.seat)
+        return list(seats)
+    
+    @property
+    def seated_players(self):
+        players = []
+        for p in self.players:
+            if not p.is_host and p.seat:
+                players.append(p)
+        return players
     
     @property
     def is_full(self):
-        if len(self.normal_players == 12):
+        if len(self.seats == 0):
             return True
         else:
             return False
@@ -93,6 +102,10 @@ class Player(db.Model):
     @property
     def is_seated(self):
         return self.seat is not None
+    
+    @property
+    def name(self):
+        return self.user.username
 
 
 
@@ -107,12 +120,20 @@ class Game(db.Model):
     votes = db.relationship('Vote', backref='game', lazy='dynamic')
 
     def __repr__(self):
-        return f"{self.name}: {self.template}"
+        return f"{self.id}: {self.template}"
     
     def end(self):
         self.finish_time = datetime.now()
         self.is_active = False
         self.current_round = -1
+    
+    @property
+    def status(self):
+        if self.current_round:
+            return self.current_round
+        else:
+            return "等待上帝指令"
+    
     
 
     
@@ -125,9 +146,14 @@ class Vote(db.Model):
     round = db.Column(db.String(120))
 
     def __repr__(self):
-        return f'Player at seat {self.seat} votes for {self.vote_for} in game {self.game_id} at round {self.round}'
+        return f'Vote from {self.vote_from} to {self.vote_for} at {self.round}'
 
     def validate(self):
         if self.vote_for <= 0 or self.vote_for >= 13:
             self.vote_for = 0
+    
+    @property
+    def vote_from(self):
+        vote_from = Player.query.filter_by(id=self.player_id).first().seat
+        return vote_from
 

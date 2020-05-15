@@ -4,7 +4,7 @@ from werkzeug.urls import url_parse
 
 from app import app, db
 from app.forms import (LoginForm, RegistrationForm, VoteForm, CreateGameForm, 
-    PregameForm, GameForm, SeatForm, ViewForm, EndGameForm, TemplateForm)
+    GameForm, SeatForm, ViewForm, TemplateForm)
 from app.models import User, Vote, Game, Room, Player
 from app.tools import random_with_N_digits, assign_character
 
@@ -21,12 +21,12 @@ def index():
                 next_page = url_for('setup')
                 return redirect(next_page)
             if form.enter_game.data:
-                # TODO: should validate room_id here
-                room_id = form.room_id.data
-                player = Player(user_id=current_user.id, room_id=room_id)
+                # TODO: should validate room_name here
+                room = Room.query.filter_by(name=form.room_name.data).first()
+                player = Player(user_id=current_user.id, room_id=room.id, is_host=False)
                 db.session.add(player)
                 db.session.commit()
-                next_page = url_for('room', room_id=room_id)
+                next_page = url_for('room', room_name=room.name)
             return redirect(next_page)
         
     return render_template('index.html', title='Home', form=form)
@@ -77,8 +77,8 @@ def setup():
     form = TemplateForm()
     if current_user.is_authenticated:
         if form.validate_on_submit():
-            room_id = random_with_N_digits()
-            room = Room(name=room_id, host=current_user.id)
+            room_name = random_with_N_digits()
+            room = Room(name=room_name, host=current_user.id)
             db.session.add(room)
             db.session.commit()
             game = Game(template=form.template.data, room_id=room.id)
@@ -86,28 +86,27 @@ def setup():
             player = Player(user_id=current_user.id, room_id=room.id, is_host=True)
             db.session.add(player)
             db.session.commit()
-            next_page = url_for('room', room_id=room_id)
+            next_page = url_for('room', room_name=room_name)
             return redirect(next_page)
     return render_template('setup.html', title='设置游戏', form=form)
 
 
-@app.route('/room/<room_id>', methods=['GET', 'POST'])
+@app.route('/room/<room_name>', methods=['GET', 'POST'])
 @login_required
-def room(room_id):
+def room(room_name):
     if current_user.is_authenticated:
-        room = Room.query.filter_by(name=room_id).first()
+        room = Room.query.filter_by(name=room_name).first()
         if current_user.is_host:
             return render_template('room.html', title='游戏进行中', room=room)
         else:
-            if current_user.current_role(room_id).is_seated:
-                pass
+            if current_user.current_role(room_name).is_seated:
                 return render_template('room.html', title='游戏进行中', room=room)
             else:
                 seat_form = SeatForm()
                 if seat_form.is_submitted():
-                    role = current_user.current_role(room_id)
+                    role = current_user.current_role(room_name)
+                    role.character = assign_character(room_name)
                     role.seat = int(seat_form.seat.data)
-                    role.character = assign_character(room_id)
                     db.session.commit()
                 
                 return render_template('room.html', title='游戏进行中', room=room, seat_form=seat_form)
@@ -115,16 +114,37 @@ def room(room_id):
         return redirect(url_for('login'))
 
 
-
-@app.route('/vote/<username>', methods=['GET', 'POST'])
-@login_required
-def vote(username):
-    pass
-
-
 # APIs
-@app.route('/room/<room_id>/seats', methods=['GET'])
+# TODO: use flask-restful later
+
+@app.route('/room/<room_name>/seats', methods=['GET'])
 @login_required
-def seats(room_id):
-    room = Room.query.filter_by(name=room_id).first()
-    return jsonify({'seats': list(room.available_seats)})
+def seats(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    return jsonify({'seats': room.available_seats})
+
+
+@app.route('/room/<room_name>/status', methods=['GET'])
+@login_required
+def status(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    return jsonify({'status': room.game.status})
+
+
+@app.route('/room/<room_name>/vote', methods=['POST'])
+@login_required
+def vote(room_name):
+    player = Player.query.filter_by(id=int(request.form['player_id'])).first()
+    if player.capable_for_vote:
+        game = Room.query.filter_by(name=room_name).first().game
+        vote_for = request.form['vote_for']
+        if vote_for <= 0 or vote_for > 12:
+            vote_for = 0
+        round = request.form['round']
+        vote = Vote(game_id=game.id, player_id=player.id, vote_for=vote_for, round=round)
+        db.session.add(vote)
+        db.session.commit()
+        player.capable_for_vote = False
+        db.session.commit()
+    
+    

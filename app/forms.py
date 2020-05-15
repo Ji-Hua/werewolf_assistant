@@ -30,17 +30,12 @@ class RegistrationForm(FlaskForm):
 
 
 class VoteForm(FlaskForm):
-    votefor = StringField('Votefor', validators=[DataRequired()])
-    submit = SubmitField('Vote')
-
-    def validate_votefor(self, votefor):
-        votefor_id = int(votefor.data)
-        if votefor_id > 12 or votefor_id < 0:
-            raise ValidationError('Please vote for a number in between 0 and 12.')
+    votefor = StringField('投票给', validators=[DataRequired()])
+    submit = SubmitField('提交投票')
 
 
 class CreateGameForm(FlaskForm):
-    room_id = StringField('房间号')
+    room_name = StringField('房间号')
     create_game = SubmitField('创建游戏')
     enter_game = SubmitField('进入游戏')
     
@@ -54,11 +49,6 @@ class TemplateForm(FlaskForm):
 class SeatForm(FlaskForm):
     seat = SelectField('选择座位')
     submit = SubmitField('坐下')
-
-
-class PregameForm(FlaskForm):
-    game_name = StringField('Game Name', validators=[DataRequired()])
-    submit = SubmitField('Start Game')
 
 
 class GameForm(FlaskForm):
@@ -83,7 +73,3 @@ class GameForm(FlaskForm):
 
 class ViewForm(FlaskForm):
     view = SubmitField('View Vote')
-
-
-class EndGameForm(FlaskForm):
-    end = SubmitField('End Game')
