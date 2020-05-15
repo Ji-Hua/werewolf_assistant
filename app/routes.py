@@ -122,6 +122,19 @@ def room(room_name):
 @login_required
 def seats(room_name):
     room = Room.query.filter_by(name=room_name).first()
+    seated_players = room.seated_players
+    results = []
+    for p in seated_players:
+        results.append({
+            "seat": int(p.seat),
+            "name": p.name,
+            "character": p.character})
+    return jsonify({'results': results})
+
+@app.route('/room/<room_name>/available_seats', methods=['GET'])
+@login_required
+def available_seats(room_name):
+    room = Room.query.filter_by(name=room_name).first()
     return jsonify({'seats': room.available_seats})
 
 
@@ -142,6 +155,11 @@ def vote(room_name):
         if vote_for <= 0 or vote_for > 12:
             vote_for = 0
         round = request.form['round']
+        prev_votes = Vote.query.filter_by(game_id=game.id, player_id=player.id, round=round).all()
+        if prev_votes:
+            for v in prev_votes:
+                db.session.delete(v)
+            db.session.commit()
         vote = Vote(game_id=game.id, player_id=player.id, vote_for=vote_for, round=round)
         db.session.add(vote)
         db.session.commit()
@@ -149,7 +167,7 @@ def vote(room_name):
         db.session.commit()
         return {"vote": vote_for}
     else:
-        return {"vote": 0}
+        return {"vote": -1}
     
     
 @app.route('/room/<room_name>/round', methods=['POST'])
@@ -166,7 +184,6 @@ def round(room_name):
         room.set_round('')
         return {'vote': 0}
     
-
 @app.route('/room/<room_name>/candidates', methods=['GET'])
 @login_required
 def candidates(room_name):

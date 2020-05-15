@@ -6,7 +6,7 @@
     {% if current_user.is_host %}
         <h3>你为本游戏的上帝</h3>
         <div id='player-status'>
-            <table id='player-status-table' hidden>
+            <table id='player-status-table'>
             <thead>
                 <tr>
                     <th>座位号</th>
@@ -15,6 +15,13 @@
                 <tr>
             </thead>
             <tbody>
+            {% for i in range(1, 13) %}
+                <tr class='player-status-table-row' id='player-status-table-row-{{i}}'>
+                    <td id='player-status-table-seat-{{i}}'>{{i}}</td>
+                    <td id='player-status-table-name-{{i}}'></td>
+                    <td id='player-status-table-character-{{i}}'></td>
+                </tr>
+            {% endfor %}
             </tbody>
             </table>
         </div>
@@ -97,7 +104,26 @@
                     }
                 })
             })
-            </script>
+            var seat_api_url = "/room/" + {{ room.name }} + "/seats";
+            function fetchseats(){
+                $.ajax({
+                    url: seat_api_url,
+                    type: 'get',
+                    success: function(response){
+                        var data = response.results;
+                        for(var i = 0; i < data.length; i++) {
+                            var row = data[i];
+                            var seat = row.seat;
+                            $("#player-status-table-name-" + seat).text(row.name);
+                            $("#player-status-table-character-" + seat).text(row.character);
+                        }
+                    }
+                });
+            }
+            $(document).ready(function(){
+                    setInterval(fetchseats, 2000);
+                });
+        </script>
     {% else %}
         {% if current_user.current_role(room.name).is_seated %}
             <h3> 你的座位为 {{current_user.current_role(room.name).seat}} </h3>
@@ -109,25 +135,30 @@
                 </p>
             <script>
                 var status_api_url = "/room/" + {{ room.name }} + "/game_status";
-                var candidates_api_url = "/room/" + {{ room.name }} + "/candidates"
-                var vote_api_url = "/room/" + {{ room.name }} + "/vote"
+                var candidates_api_url = "/room/" + {{ room.name }} + "/candidates";
+                var vote_api_url = "/room/" + {{ room.name }} + "/vote";
+                var prev_status = "";
                 function fetchstatus(){
                     $.ajax({
                         url: status_api_url,
                         type: 'get',
                         success: function(response){
+                            console.log(response.status);
                             $("#vote-label").text( response.status);
-                            if (response.status != "等待上帝指令") {
-                                $.getJSON(candidates_api_url, function(data) {
-                                    var optionsAsString = "<option value='0'>弃权</option>";
-                                    for(var i = 0; i < data.candidates.length; i++) {
-                                        optionsAsString += "<option value='" +  data.candidates[i] + "'>" +  data.candidates[i] + "</option>";
-                                    };
-                                    $("#vote-select").find('option').remove().end().append($(optionsAsString));
-                                });
-                            } else {
-                                $("#vote-select").find('option').remove().end();
-                            }
+                            if (response.status != prev_status) {
+                                prev_status = response.status;
+                                if (response.status != "等待上帝指令") {
+                                    $.getJSON(candidates_api_url, function(data) {
+                                        var optionsAsString = "<option value='0'>弃权</option>";
+                                        for(var i = 0; i < data.candidates.length; i++) {
+                                            optionsAsString += "<option value='" +  data.candidates[i] + "'>" +  data.candidates[i] + "</option>";
+                                        };
+                                        $("#vote-select").find('option').remove().end().append($(optionsAsString));
+                                    });
+                                } else {
+                                    $("#vote-select").find('option').remove().end();
+                                }
+                            } 
                         }
                     });
                 }
@@ -147,6 +178,8 @@
                         success: function(response) {
                             if (response.vote == 0) {
                                 alert("弃票");
+                            } else if (response.vote == -1) {
+                                alert("本轮无法投票")
                             } else {
                                 alert("你投票给" + response.vote + "号玩家");
                             }
@@ -169,7 +202,7 @@
                 <p>{{ seat_form.submit() }}</p>
             </form>
             <script>
-                var api_url = "/room/" + {{ room.name }} + "/seats";
+                var api_url = "/room/" + {{ room.name }} + "/available_seats";
                 $(document).ready(function() {
                     $.getJSON(api_url, function(data) {
                         var optionsAsString = "";
