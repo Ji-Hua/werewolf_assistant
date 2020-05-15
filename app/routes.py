@@ -78,7 +78,7 @@ def setup():
     if current_user.is_authenticated:
         if form.validate_on_submit():
             room_name = random_with_N_digits()
-            room = Room(name=room_name, host=current_user.id)
+            room = Room(name=room_name)
             db.session.add(room)
             db.session.commit()
             game = Game(template=form.template.data, room_id=room.id)
