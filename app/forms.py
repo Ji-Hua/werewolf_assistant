@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 from app.models import User, Game
+from app.tools import GAME_TEMPLATES
 
 class LoginForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired()])
@@ -41,7 +42,7 @@ class CreateGameForm(FlaskForm):
     
 
 class TemplateForm(FlaskForm):
-    choices = [('预女猎白', '预女猎白')]
+    choices = [(key, key) for key in GAME_TEMPLATES.keys()]
     template = SelectField('游戏设置', choices=choices)
     submit = SubmitField('开始游戏')
 
