@@ -1,23 +1,34 @@
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, jsonify
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
 
 from app import app, db
-from app.forms import LoginForm, RegistrationForm, VoteForm, RoleForm, \
-    PregameForm, GameForm, PlayerPregameForm, ViewForm, EndGameForm
-from app.models import User, Vote, Game
+from app.forms import (LoginForm, RegistrationForm, VoteForm, CreateGameForm, 
+    GameRoundForm, SeatForm, ViewForm, TemplateForm)
+from app.models import User, Vote, Game, Room, Player
+from app.tools import random_with_N_digits, assign_character
+
+
 
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
-    form = RoleForm()
-    if form.validate_on_submit():
-        if current_user.is_authenticated:
-            current_user.role = form.role.data
-            db.session.commit()
-            next_page = url_for('pregame')
+    form = CreateGameForm()
+    if current_user.is_authenticated:
+        if form.validate():
+            if form.create_game.data:
+                next_page = url_for('setup')
+                return redirect(next_page)
+            if form.enter_game.data:
+                # TODO: should validate room_name here
+                room = Room.query.filter_by(name=form.room_name.data).first()
+                player = Player(user_id=current_user.id, room_id=room.id, is_host=False)
+                db.session.add(player)
+                db.session.commit()
+                next_page = url_for('room', room_name=room.name)
             return redirect(next_page)
+        
     return render_template('index.html', title='Home', form=form)
 
 
@@ -60,72 +71,113 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
-@app.route('/vote/<username>', methods=['GET', 'POST'])
+@app.route('/setup', methods=['GET', 'POST'])
 @login_required
-def vote(username):
+def setup():
+    form = TemplateForm()
     if current_user.is_authenticated:
-        game = Game.query.filter_by(is_active=True).order_by(
-            Game.id.desc()).limit(1).all()[0]
-        end_game_form = EndGameForm()
-        view_form = ViewForm()
-        if current_user.role == 'God':
-            form = GameForm()
-            if form.validate() and form.submit.data:
-                game.current_round = form.current_round.data
-                db.session.commit()
-                flash(f"Vote of {form.current_round.data} began")
-            
-            if end_game_form.validate() and end_game_form.end.data:
-                game.end()
-                db.session.commit()
-                users = User.query.all()
-                for user in users:
-                    user.seat = -1
-                    db.session.commit()
-                return redirect(url_for('pregame'))
-        else:
-            form = VoteForm()
-            if form.validate() and form.submit.data:
-                flash(f"{current_user.seat} voted for {form.votefor.data}")
-                v = Vote(seat=current_user.seat, game_id=game.id,
-                    round=game.current_round, vote_for=form.votefor.data,
-                    player=current_user)
-                db.session.add(v)
-                db.session.commit()
-                return redirect(url_for('pregame'))
-        
-        if view_form.validate() and view_form.view.data:
-            votes = Vote.query.filter_by(game_id=game.id).filter_by(round=game.current_round).all()
-            flash(game.id)
-            flash(game.current_round)
-            flash(votes)
+        if form.validate_on_submit():
+            room_name = random_with_N_digits()
+            room = Room(name=room_name, host=current_user.id)
+            db.session.add(room)
+            db.session.commit()
+            game = Game(template=form.template.data, room_id=room.id)
+            db.session.add(game)
+            player = Player(user_id=current_user.id, room_id=room.id, is_host=True)
+            db.session.add(player)
+            db.session.commit()
+            next_page = url_for('room', room_name=room_name)
+            return redirect(next_page)
+    return render_template('setup.html', title='设置游戏', form=form)
 
-        return render_template('vote.html', title='Vote', form=form, game=game,
-            end_game_form=end_game_form, view_form=view_form)
+
+@app.route('/room/<room_name>', methods=['GET', 'POST'])
+@login_required
+def room(room_name):
+    if current_user.is_authenticated:
+        room = Room.query.filter_by(name=room_name).first()
+        if current_user.is_host:
+            form = GameRoundForm()
+            return render_template('room.html', title='游戏进行中', room=room, form=form)
+        else:
+            if current_user.current_role(room_name).is_seated:
+                return render_template('room.html', title='游戏进行中', room=room)
+            else:
+                seat_form = SeatForm()
+                if seat_form.is_submitted():
+                    role = current_user.current_role(room_name)
+                    role.character = assign_character(room_name)
+                    role.seat = int(seat_form.seat.data)
+                    db.session.commit()
+                
+                return render_template('room.html', title='游戏进行中', room=room, seat_form=seat_form)
     else:
         return redirect(url_for('login'))
 
 
+# APIs
+# TODO: use flask-restful later
 
-@app.route('/pregame', methods=['GET', 'POST'])
+@app.route('/room/<room_name>/seats', methods=['GET'])
 @login_required
-def pregame():
-    if current_user.is_authenticated:
-        if current_user.role == 'God':
-            form = PregameForm()
-            if form.validate_on_submit():
-                game = Game(name=form.game_name.data, host=current_user.id)
-                db.session.add(game)
-                db.session.commit()
-                flash(f'{game.name} started')
-                return redirect(url_for('vote', username=current_user.username))
-        else:
-            form = PlayerPregameForm()
-            if form.validate_on_submit():
-                if current_user.seat == 0:
-                    current_user.seat = int(form.seat.data)
-                    db.session.commit()
-                return redirect(url_for('vote', username=current_user.username))
-        return render_template('pregame.html', title='Pregame', form=form, current_user=current_user)
+def seats(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    return jsonify({'seats': room.available_seats})
+
+
+@app.route('/room/<room_name>/game_status', methods=['GET'])
+@login_required
+def game_status(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    return jsonify({'status': room.game.status})
+
+
+@app.route('/room/<room_name>/vote', methods=['POST'])
+@login_required
+def vote(room_name):
+    player = Player.query.filter_by(id=int(request.form['player_id'])).first()
+    if player.capable_for_vote:
+        game = Room.query.filter_by(name=room_name).first().game
+        vote_for = int(request.form['vote_for'])
+        if vote_for <= 0 or vote_for > 12:
+            vote_for = 0
+        round = request.form['round']
+        vote = Vote(game_id=game.id, player_id=player.id, vote_for=vote_for, round=round)
+        db.session.add(vote)
+        db.session.commit()
+        player.capable_for_vote = False
+        db.session.commit()
+        return {"vote": vote_for}
     else:
-        return redirect(url_for('login'))
+        return {"vote": 0}
+    
+    
+@app.route('/room/<room_name>/round', methods=['POST'])
+@login_required
+def round(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    if request.form['allow_vote'] == 'true':
+        round_name = request.form['round_name']
+        room.set_round(round_name)
+        room.allow_votes()
+        return {'vote': 1}
+    else:
+        room.disable_votes()
+        room.set_round('')
+        return {'vote': 0}
+    
+
+@app.route('/room/<room_name>/candidates', methods=['GET'])
+@login_required
+def candidates(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    candidates = [p.seat for p in room.survivals]
+    return jsonify({'candidates': candidates})
+
+@app.route('/room/<room_name>/results/<round_name>', methods=['GET'])
+@login_required
+def results(room_name, round_name):
+    room = Room.query.filter_by(name=room_name).first()
+    results = room.view_vote_results(round_name)
+    return jsonify({'results': results})
+

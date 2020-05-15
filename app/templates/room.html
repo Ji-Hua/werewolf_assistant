@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>游戏 {{ room.name }}</h1>
+    <h4>当前游戏设置为 {{ room.game.template }}</h4>
+    {% if current_user.is_host %}
+        <h3>你为本游戏的上帝</h3>
+        {{ form.round.label }}<br>
+        {{ form.round(id='round-select') }}<br>
+        <input id="start-vote-button" name="submit" type="submit" value="开始投票">
+        <input id="end-vote-button" name="submit" type="submit" value="结束投票">
+        <input id="view-vote-button" name="submit" type="submit" value="查看投票"><br>
+        <div id='vote-results'>
+            <table id='vote-results-table' hidden>
+            <thead>
+                <tr>
+                    <th>轮次</th>
+                    <th>玩家</th>
+                    <th>投票给</th>
+                <tr>
+            </thead>
+            <tbody>
+            </tbody>
+            </table>
+        </div>
+        <script>
+            var round_api_url = "/room/" + {{ room.name }} + "/round";
+            $("#start-vote-button").click(function(){
+                var data = {
+                    round_name: $( "#round-select option:selected" ).val(),
+                    allow_vote: true,
+                };
+                $.ajax({
+                    type: "POST",
+                    url: round_api_url,
+                    data: data,
+                    success: function(response) {
+                        if (response.vote == 1) {
+                            alert('投票已开启')
+                        } else {
+                            alert('投票已结束')
+                        }
+                        
+                    }
+                })
+            })
+            $("#end-vote-button").click(function(){
+                var data = {
+                    round_name: $( "#round-select option:selected" ).val(),
+                    allow_vote: false,
+                };
+                $.ajax({
+                    type: "POST",
+                    url: round_api_url,
+                    data: data,
+                    success: function(response) {
+                        if (response.vote == 1) {
+                            alert('投票已开启')
+                        } else {
+                            alert('投票已结束')
+                        }
+                        
+                    }
+                })
+            })
+            $("#view-vote-button").click(function(){
+                $("#vote-results-table tbody").html('');
+                var round_name = $( "#round-select option:selected" ).val();
+                var result_api_url = "/room/" + {{ room.name }} + "/results/" + round_name;
+                $.ajax({
+                    type: "GET",
+                    url: result_api_url,
+                    success: function(response) {
+                        var data = response.results;
+                        for(var i = 0; i < data.length; i++) {
+                            var vote_for = data[i].vote_for;
+                            if (vote_for == 0) {
+                                vote_for = "弃票"
+                            };
+                            var row = "<tr><td>" + round_name + "</td><td>" + data[i].vote_from + "</td><td>" + vote_for + "</td></tr>";
+                            $('#vote-results-table tbody').append(row);
+                        };
+                       $("#vote-results-table").show()
+                    }
+                })
+            })
+            </script>
+    {% else %}
+        {% if current_user.current_role(room.name).is_seated %}
+            <h3> 你的座位为 {{current_user.current_role(room.name).seat}} </h3>
+            <h3> 你的角色为 {{current_user.current_role(room.name).character}} </h3>
+                <label for="vote" id="vote-label"></label><br>
+                <select name="vote" id="vote-select"></select>
+                <p>
+                    <input id="vote-button" name="submit" type="submit" value="投票">
+                </p>
+            <script>
+                var status_api_url = "/room/" + {{ room.name }} + "/game_status";
+                var candidates_api_url = "/room/" + {{ room.name }} + "/candidates"
+                var vote_api_url = "/room/" + {{ room.name }} + "/vote"
+                function fetchstatus(){
+                    $.ajax({
+                        url: status_api_url,
+                        type: 'get',
+                        success: function(response){
+                            $("#vote-label").text( response.status);
+                            if (response.status != "等待上帝指令") {
+                                $.getJSON(candidates_api_url, function(data) {
+                                    var optionsAsString = "<option value='0'>弃权</option>";
+                                    for(var i = 0; i < data.candidates.length; i++) {
+                                        optionsAsString += "<option value='" +  data.candidates[i] + "'>" +  data.candidates[i] + "</option>";
+                                    };
+                                    $("#vote-select").find('option').remove().end().append($(optionsAsString));
+                                });
+                            } else {
+                                $("#vote-select").find('option').remove().end();
+                            }
+                        }
+                    });
+                }
+                $(document).ready(function(){
+                    setInterval(fetchstatus, 2000);
+                });
+                $("#vote-button").click(function(){
+                    var data = {
+                        vote_for: $( "#vote-select option:selected" ).val(),
+                        player_id: {{ current_user.current_role(room.name).id }},
+                        round: $( "#vote-label" ).text()
+                    };
+                    $.ajax({
+                        type: "POST",
+                        url: vote_api_url,
+                        data: data,
+                        success: function(response) {
+                            if (response.vote == 0) {
+                                alert("弃票");
+                            } else {
+                                alert("你投票给" + response.vote + "号玩家");
+                            }
+                            
+                        }
+                    })
+                })
+            </script>
+        {% else %}
+            <form action="" method="post">
+                {{ seat_form.csrf_token }}
+                {{ seat_form.hidden_tag() }}
+                <p>
+                    {{ seat_form.seat.label }}
+                    {{ seat_form.seat(id='seat-select') }}
+                    {% for error in seat_form.seat.errors %}
+                        <span style="color: red;">[{{ error }}]</span>
+                    {% endfor %}
+                </p>
+                <p>{{ seat_form.submit() }}</p>
+            </form>
+            <script>
+                var api_url = "/room/" + {{ room.name }} + "/seats";
+                $(document).ready(function() {
+                    $.getJSON(api_url, function(data) {
+                        var optionsAsString = "";
+                        for(var i = 0; i < data.seats.length; i++) {
+                            optionsAsString += "<option value='" +  data.seats[i] + "'>" +  data.seats[i] + "</option>";
+                        };
+                        $("#seat-select").find('option').remove().end().append($(optionsAsString));
+                    });
+                });
+        
+            </script>
+        {% endif %}
+    {% endif %}
+    
+{% endblock %}
+
