@@ -2,14 +2,14 @@
     <head>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         {% if title %}
-        <title>{{ title }} - ZoomKill</title>
+        <title>{{ title }} - 烂柯桌游社</title>
         {% else %}
-        <title>ZoomKill</title>
+        <title>烂柯桌游社</title>
         {% endif %}
     </head>
     <body>
         <div>
-            Zoomkill:
+            烂柯桌游社:
             <a href="{{ url_for('index') }}">首页</a>
             {% if current_user.is_anonymous %}
             <a href="{{ url_for('login') }}">登录</a>

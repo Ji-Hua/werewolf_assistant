@@ -3,8 +3,8 @@ from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
 
 from app import app, db
-from app.forms import (LoginForm, RegistrationForm, VoteForm, CreateGameForm, 
-    GameRoundForm, SeatForm, ViewForm, TemplateForm)
+from app.forms import (LoginForm, RegistrationForm, CreateGameForm, 
+    GameRoundForm, SeatForm,TemplateForm)
 from app.models import User, Vote, Game, Room, Player
 from app.tools import random_with_N_digits, assign_character
 

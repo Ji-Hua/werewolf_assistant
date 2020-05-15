@@ -13,7 +13,7 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired()])
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    email = StringField('电子邮箱', validators=[DataRequired(), Email()])
     password = PasswordField('密码', validators=[DataRequired()])
     password2 = PasswordField(
         '重复密码', validators=[DataRequired(), EqualTo('password')])
@@ -22,17 +22,12 @@ class RegistrationForm(FlaskForm):
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
         if user is not None:
-            raise ValidationError('Please use a different username.')
+            raise ValidationError('请使用其他用户名')
 
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user is not None:
-            raise ValidationError('Please use a different email address.')
-
-
-class VoteForm(FlaskForm):
-    votefor = StringField('投票给', validators=[DataRequired()])
-    submit = SubmitField('提交投票')
+            raise ValidationError('请使用其他电子邮箱')
 
 
 class CreateGameForm(FlaskForm):
@@ -70,7 +65,4 @@ class GameRoundForm(FlaskForm):
     ]
     round = SelectField('选择投票轮次', choices=round_opts, validate_choice=False)
     
-    
 
-class ViewForm(FlaskForm):
-    view = SubmitField('View Vote')
