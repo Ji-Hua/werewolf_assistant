@@ -222,17 +222,6 @@ def campaign(room_name):
     else:
         room.quit_campaign(seat)
         return jsonify({'campaign': False})
-<<<<<<< HEAD
-
-@app.route('/room/<room_name>/kill', methods=['POST'])
-@login_required
-def kill(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    seat = int(request.form['seat'])
-    room.kill(seat)
-    return jsonify({'killed': True})
-=======
->>>>>>> 23665a2dedae1198630c60164f644ddebf20ec10
 
 @app.route('/room/<room_name>/kill', methods=['POST'])
 @login_required
