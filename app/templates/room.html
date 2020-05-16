@@ -292,11 +292,28 @@
                 <p>
                     <input id="vote-button" name="submit" type="submit" value="投票">
                 </p>
+                <br>
+                <p id='vote-stage'></p>
+                <div id='vote-results' hidden>
+                    <p id='vote-results-most-voted'></p>
+                    <table id='vote-results-table'>
+                    <thead>
+                        <tr>
+                            <th>轮次</th>
+                            <th>玩家</th>
+                            <th>投票给</th>
+                        <tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                    </table>
+                </div>
             <script>
                 var status_api_url = "/room/" + {{ room.name }} + "/game_status";
                 var candidates_api_url = "/room/" + {{ room.name }} + "/candidates";
                 var vote_api_url = "/room/" + {{ room.name }} + "/vote";
                 var prev_status = "";
+                var prev_stage = "";
                 function fetchstatus(){
                     $.ajax({
                         url: status_api_url,
@@ -307,6 +324,9 @@
                             if (response.status != prev_status) {
                                 prev_status = response.status;
                                 if (response.status != "等待上帝指令") {
+                                    prev_stage = response.status;
+                                    console.log(prev_stage);
+                                    $("#vote-stage").text('投票已开启');
                                     $.getJSON(candidates_api_url, function(data) {
                                         var optionsAsString = "<option value='0'>弃权</option>";
                                         for(var i = 0; i < data.candidates.length; i++) {
@@ -315,11 +335,47 @@
                                         $("#vote-select").find('option').remove().end().append($(optionsAsString));
                                     });
                                 } else {
+                                    $("#vote-stage").text('投票已关闭');
                                     $("#vote-select").find('option').remove().end();
+                                    viewResults();
                                 }
                             } 
                         }
                     });
+                }
+                function viewResults() {
+                    $("#vote-results-table tbody").html('');
+                    var result_api_url = "/room/" + {{ room.name }} + "/results/" + prev_stage;
+                    console.log(result_api_url);
+                    $.ajax({
+                        type: "GET",
+                        url: result_api_url,
+                        success: function(response) {
+                            var data = response.results;
+                            for(var i = 0; i < data.length; i++) {
+                                var vote_for = data[i].vote_for;
+                                if (vote_for == 0) {
+                                    vote_for = "弃票"
+                                };
+                                var row = "<tr><td>" + prev_stage + "</td><td>" + data[i].vote_from + "</td><td>" + vote_for + "</td></tr>";
+                                $('#vote-results-table tbody').append(row);
+                            };
+                            var most_voted = response.most_voted;
+                            console.log(most_voted);
+                            if (most_voted.length == 0) {
+                                var text_most_voted = "无人得票"
+                            } else {
+                                var text_most_voted = "得票最多的玩家为";
+                                for(var i = 0; i < most_voted.length; i++) {
+                                    text_most_voted = text_most_voted + " " + most_voted[i];
+                                }
+                                text_most_voted += " 号玩家"
+                            }
+
+                            $("#vote-results-most-voted").text(text_most_voted);
+                            $("#vote-results").show();
+                        }
+                    })
                 }
                 $(document).ready(function(){
                     setInterval(fetchstatus, 2000);
