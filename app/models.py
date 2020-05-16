@@ -21,9 +21,21 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    @property
-    def is_host(self):
-        return self.role.first().is_host == True
+    def role_in_room(self, room_name):
+        room = Room.query.filter_by(name=room_name).first()
+        roles = self.role.all()
+        for role in roles:
+            if role.room_id == room.id:
+                return role
+        else:
+            return None
+    
+    def is_host(self, room_name):
+        role = self.role_in_room(room_name)
+        if role is not None:
+            return role.is_host
+        else:
+            return False
 
     def current_role(self, room_name):
         room_id = Room.query.filter_by(name=room_name).first().id

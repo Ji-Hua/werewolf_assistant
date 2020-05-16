@@ -96,7 +96,7 @@ def setup():
 def room(room_name):
     if current_user.is_authenticated:
         room = Room.query.filter_by(name=room_name).first()
-        if current_user.is_host:
+        if current_user.is_host(room.name):
             form = GameRoundForm()
             return render_template('room.html', title='游戏进行中', room=room, form=form)
         else:
