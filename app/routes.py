@@ -96,7 +96,7 @@ def setup():
 def room(room_name):
     if current_user.is_authenticated:
         room = Room.query.filter_by(name=room_name).first()
-        if current_user.is_host:
+        if current_user.is_host(room.name):
             form = GameRoundForm()
             return render_template('room.html', title='游戏进行中', room=room, form=form)
         else:
@@ -125,10 +125,7 @@ def seats(room_name):
     seated_players = room.seated_players
     results = []
     for p in seated_players:
-        results.append({
-            "seat": int(p.seat),
-            "name": p.name,
-            "character": p.character})
+        results.append(p.description)
     return jsonify({'results': results})
 
 @app.route('/room/<room_name>/available_seats', methods=['GET'])
@@ -178,17 +175,20 @@ def round(room_name):
         round_name = request.form['round_name']
         room.set_round(round_name)
         room.allow_votes()
-        return {'vote': 1}
+        return jsonify({'vote': 1})
     else:
         room.disable_votes()
         room.set_round('')
-        return {'vote': 0}
+        return jsonify({'vote': 0})
     
 @app.route('/room/<room_name>/candidates', methods=['GET'])
 @login_required
 def candidates(room_name):
     room = Room.query.filter_by(name=room_name).first()
-    candidates = [p.seat for p in room.survivals]
+    if room.round == "警长竞选":
+        candidates = [p.seat for p in room.survivals if p.in_sheriff_campaign and p.is_candidate]
+    else:
+        candidates = [p.seat for p in room.survivals if p.is_candidate]
     return jsonify({'candidates': candidates})
 
 @app.route('/room/<room_name>/results/<round_name>', methods=['GET'])
@@ -222,6 +222,17 @@ def campaign(room_name):
     else:
         room.quit_campaign(seat)
         return jsonify({'campaign': False})
+<<<<<<< HEAD
+
+@app.route('/room/<room_name>/kill', methods=['POST'])
+@login_required
+def kill(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    seat = int(request.form['seat'])
+    room.kill(seat)
+    return jsonify({'killed': True})
+=======
+>>>>>>> 23665a2dedae1198630c60164f644ddebf20ec10
 
 @app.route('/room/<room_name>/kill', methods=['POST'])
 @login_required
@@ -231,3 +242,10 @@ def kill(room_name):
     room.kill(seat)
     return jsonify({'killed': True})
 
+@app.route('/room/<room_name>/sheriff', methods=['POST'])
+@login_required
+def sheriff(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    seat = int(request.form['seat'])
+    room.set_sheriff(seat)
+    return jsonify({'sheriff': seat})

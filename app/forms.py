@@ -50,18 +50,12 @@ class GameRoundForm(FlaskForm):
     
     round_opts = [
         ('警长竞选', '警长竞选'),
-        ('警长竞选-pk', '警长竞选-pk'),
-        ('第1天放逐', '第1天放逐'),
-        ('第1天放逐-pk', '第1天放逐-pk'),
-        ('第2天放逐', '第2天放逐'),
-        ('第2天放逐-pk', '第2天放逐-pk'),
-        ('第3天放逐', '第3天放逐'),
-        ('第3天放逐-pk', '第3天放逐-pk'),
-        ('第4天放逐', '第4天放逐'),
-        ('第4天放逐-pk', '第4天放逐-pk'),
-        ('第5天放逐', '第5天放逐'),
-        ('第5天放逐-pk', '第5天放逐-pk')
+        ('第1天', '第1天'),
+        ('第2天', '第2天'),
+        ('第3天', '第3天'),
+        ('第4天', '第4天'),
+        ('第5天', '第5天'),
     ]
-    round = SelectField('选择投票轮次', choices=round_opts, validate_choice=False)
+    round = SelectField('选择当前轮次', choices=round_opts, validate_choice=False)
     
 
