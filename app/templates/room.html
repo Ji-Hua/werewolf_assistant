@@ -3,7 +3,7 @@
 {% block content %}
     <h1>游戏 {{ room.name }}</h1>
     <h4>当前游戏设置为 {{ room.game.template }}</h4>
-    {% if current_user.is_host %}
+    {% if current_user.is_host(room.name) %}
         <h3>你为本游戏的上帝</h3>
         <div id='player-status'>
             <table id='player-status-table'>
