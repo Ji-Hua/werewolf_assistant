@@ -112,9 +112,12 @@ class Room(db.Model):
             for p in self.survivals:
                 if not p.sheriff_campaigned:
                     p.capable_for_vote = True
+                if p.in_sheriff_campaign:
+                    p.is_candidate = True
         else:
             for p in self.survivals:
                 p.capable_for_vote = True
+                p.is_candidate = True
         db.session.commit()
     
     def disable_votes(self):

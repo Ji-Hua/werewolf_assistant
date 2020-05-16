@@ -236,7 +236,5 @@ def kill(room_name):
 def sheriff(room_name):
     room = Room.query.filter_by(name=room_name).first()
     seat = int(request.form['seat'])
-    print(seat)
     room.set_sheriff(seat)
-    print(room.sheriff)
     return jsonify({'sheriff': seat})

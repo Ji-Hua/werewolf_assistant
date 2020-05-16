@@ -36,12 +36,14 @@
          <input id="sheriff-button" name="submit" type="submit" value="授予警徽">
         <br>
         {{ form.round.label }}<br>
-        {{ form.round(id='round-select') }}<br>
+        {{ form.round(id='round-select') }}
+        <input id="round-button" name="submit" type="submit" value="确认阶段"><br>
         <input id="start-vote-button" name="submit" type="submit" value="开始投票">
         <input id="end-vote-button" name="submit" type="submit" value="结束投票">
         <input id="view-vote-button" name="submit" type="submit" value="查看投票"><br>
 
 
+        <p id='vote-stage'></p>
         <div id='vote-results' hidden>
             <p id='vote-results-most-voted'></p>
             <table id='vote-results-table'>
@@ -77,6 +79,10 @@
                 })
             })
 
+            $("#round-button").click(function(){
+                current_stage = $( "#round-select option:selected" ).val();
+            })
+
 
 
 
@@ -94,11 +100,10 @@
                     data: data,
                     success: function(response) {
                         if (response.vote == 1) {
-                            alert('投票已开启')
+                            $("#vote-stage").text('投票已开启')
                         } else {
-                            alert('投票已结束')
+                            $("#vote-stage").text('投票已结束')
                         }
-                        
                     }
                 })
             })
@@ -114,16 +119,18 @@
                     data: data,
                     success: function(response) {
                         if (response.vote == 1) {
-                            alert('投票已开启')
+                            $("#vote-stage").text('投票已开启')
                         } else {
-                            alert('投票已结束')
+                            $("#vote-stage").text('投票已结束')
                         }
-                        
                     }
-                })
+                });
+                viewResults();
             })
 
-            $("#view-vote-button").click(function(){
+            $("#view-vote-button").click(viewResults)
+
+            function viewResults() {
                 $("#vote-results-table tbody").html('');
                 var round_name = $( "#round-select option:selected" ).val();
                 var result_api_url = "/room/" + {{ room.name }} + "/results/" + round_name;
@@ -156,9 +163,7 @@
                         $("#vote-results").show();
                     }
                 })
-            })
-
-            
+            }
 
             var seat_api_url = "/room/" + {{ room.name }} + "/seats";
             function fetchseats(){
