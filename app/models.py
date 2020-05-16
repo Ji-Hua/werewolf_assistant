@@ -65,7 +65,7 @@ class Room(db.Model):
         seats = set(range(1, 13))
         for p in self.normal_players:
             if p.seat:
-                seats -= set(p.seat)
+                seats -= set([p.seat])
         return list(seats)
     
     @property

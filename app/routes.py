@@ -29,7 +29,7 @@ def index():
                 next_page = url_for('room', room_name=room.name)
             return redirect(next_page)
         
-    return render_template('index.html', title='Home', form=form)
+    return render_template('index.html', title='首页', form=form)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -40,14 +40,14 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user is None or not user.check_password(form.password.data):
-            flash('Invalid username or password')
+            flash('密码或用户名不正确')
             return redirect(url_for('login'))
-        login_user(user, remember=form.remember_me.data)
+        login_user(user)
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('index')
         return redirect(next_page)
-    return render_template('login.html', title='Sign In', form=form)
+    return render_template('login.html', title='登录', form=form)
 
 
 @app.route('/logout')
@@ -66,9 +66,9 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash('Congratulations, you are now a registered user!')
+        flash('注册成功')
         return redirect(url_for('login'))
-    return render_template('register.html', title='Register', form=form)
+    return render_template('register.html', title='注册', form=form)
 
 
 @app.route('/setup', methods=['GET', 'POST'])
