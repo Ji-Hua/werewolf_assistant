@@ -196,5 +196,38 @@ def candidates(room_name):
 def results(room_name, round_name):
     room = Room.query.filter_by(name=room_name).first()
     results = room.view_vote_results(round_name)
-    return jsonify({'results': results})
+    results = sorted(results, key=lambda x: x['vote_from'])
+    counter = {}
+    for row in results:
+        value = row['vote_for']
+        if value > 0 and value < 12:
+            count = counter.get(value, 0)
+            counter[value] = count + 1
+    if counter:
+        max_vote = max(list(counter.values()))
+        most_voted = sorted([k for k, v in counter.items() if v == max_vote])
+    else:
+        most_voted = []
+    return jsonify({'results': results, 'most_voted': most_voted})
+
+
+@app.route('/room/<room_name>/campaign', methods=['POST'])
+@login_required
+def campaign(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    seat = int(request.form['seat'])
+    if request.form['campaign'] == 'true':
+        room.campaign(seat)
+        return jsonify({'campaign': True})
+    else:
+        room.quit_campaign(seat)
+        return jsonify({'campaign': False})
+
+@app.route('/room/<room_name>/kill', methods=['POST'])
+@login_required
+def kill(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    seat = int(request.form['seat'])
+    room.kill(seat)
+    return jsonify({'killed': True})
 
