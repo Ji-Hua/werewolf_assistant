@@ -2,7 +2,7 @@
     <head>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <!--css style-->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
     <!--fonts-->
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
     <!--
@@ -16,7 +16,7 @@
 
 <body>
     <div id="header">
-        <img class="logo" src="/assets/logo.png">
+        <img class="logo" src="{{url_for('static', filename='logo.png')}}">
         <div class="banner">
             <p>
                 <span class="chinesecursive bannertext">烂柯桌游社<br></span>
