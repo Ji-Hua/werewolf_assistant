@@ -1,4 +1,7 @@
+import json
+import os
 import random
+
 from app.models import Room
 
 GAME_ID_LENGTH = 6
@@ -9,61 +12,9 @@ def random_with_N_digits(n=GAME_ID_LENGTH):
     range_end = (10**n)-1
     return random.randint(range_start, range_end)
 
-GAME_TEMPLATES = {
-    '预女猎白': {
-        '预言家': 1,
-        '女巫': 1,
-        '猎人': 1,
-        '白痴': 1,
-        '狼人': 4,
-        '村民': 4
-    },
-    '狐女猎白': {
-        '狐狸': 1,
-        '女巫': 1,
-        '猎人': 1,
-        '白痴': 1,
-        '狼人': 4,
-        '村民': 4
-    },
-    '天狗 vs 预女猎月': {
-        '预言家': 1,
-        '女巫': 1,
-        '猎人': 1,
-        '操纵月亮的女孩': 1,
-        '狼人': 3,
-        '天狗': 1,
-        '村民': 4
-    },
-    '机械狼 vs 通女猎守': {
-        '通灵师': 1,
-        '女巫': 1,
-        '猎人': 1,
-        '守卫': 1,
-        '狼人': 3,
-        '机械狼': 1,
-        '村民': 4
-    },
-    '恶魔 vs 预女猎守': {
-        '预言家': 1,
-        '女巫': 1,
-        '猎人': 1,
-        '守卫': 1,
-        '狼人': 3,
-        '恶魔': 1,
-        '村民': 4
-    },
-    '狐仙 vs 预女猎阴': {
-        '预言家': 1,
-        '女巫': 1,
-        '猎人': 1,
-        '阴阳使者': 1,
-        '狼人': 3,
-        '狐仙': 1,
-        '村民': 4
-    }
-}
-
+data_path = os.path.join(os.path.dirname(__file__), 'data/')
+with open(os.path.join(data_path, 'game_config.json')) as f:
+    GAME_TEMPLATES = json.load(f)
 
 def build_character_queue(template_name):
     queue = []
