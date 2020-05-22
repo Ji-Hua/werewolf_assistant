@@ -5,13 +5,13 @@
     <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
     <!--fonts-->
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
-    <!--
-        {% if title %}
-        <title>{{ title }} - 烂柯桌游社</title>
-        {% else %}
-        <title>烂柯桌游社</title>
-        {% endif %}
--->
+
+    {% if title %}
+    <title>{{ title }} - 烂柯桌游社</title>
+    {% else %}
+    <title>烂柯桌游社</title>
+    {% endif %}
+
 </head>
 
 <body>
@@ -23,29 +23,19 @@
                 <span class="bannertext">Harvard Boardgames Club</span>
             </p>
         </div>
-    </div>
-    <div>
-        <a class="chinese" href="{{ url_for('index') }}">首页</a>
-        {% if current_user.is_anonymous %}
-        <a class="chinese" href="{{ url_for('login') }}">登录</a>
-        <p>新用户？<a href="{{ url_for('register') }}">点击注册</a></p>
-        {% else %}
-        <a href="{{ url_for('logout') }}">登出</a>
-        <p>登录为<span class="highlight">{{ current_user.username }}</span></p>
+        <hr>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        
         {% endif %}
-    </div>
-    <hr>
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    <p class="highlight">
-        {% for message in messages %}
-        {{ message }}
-        {% endfor %}
-    </p>
-
-    {% endif %}
-    {% endwith %}
-    {% block content %}
-    {% endblock %}
-
-</body></html>
+        {% endwith %}
+        {% block content %}
+        {% endblock %}
+        
+    </body>
+</html>
