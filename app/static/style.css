@@ -51,3 +51,8 @@ a {
     border-bottom: 1px solid currentColor; 
     text-decoration: none;
 }
+
+table {
+    align-content: center;
+    text-align: center;
+}

@@ -42,7 +42,7 @@ class User(UserMixin, db.Model):
         room_id = Room.query.filter_by(name=room_name).first().id
         return self.role.filter_by(room_id=room_id).first()
     
-    def avatar(self, size):
+    def avatar(self, size=28):
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
         return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
 
@@ -57,14 +57,14 @@ class Room(db.Model):
     name = db.Column(db.String(120), index=True, nullable=False)
     game = db.relationship('Game', backref='room', uselist=False)
     players = db.relationship('Player', backref='room', lazy=True)
-    
+
     def __repr__(self):
         return f"{self.name}: {self.game.template}"
-    
+
     @property
     def round(self):
         return self.game.current_round
-    
+
     @property
     def host(self):
         for p in self.players:
@@ -72,7 +72,7 @@ class Room(db.Model):
                 return p
         else:
             raise ValueError('No host find')
-    
+
     @property
     def sheriff(self):
         for p in self.survivals:
@@ -80,7 +80,7 @@ class Room(db.Model):
                 return p.seat
         else:
             0
-        
+
     @property
     def normal_players(self):
         players = []
@@ -88,7 +88,7 @@ class Room(db.Model):
             if not p.is_host:
                 players.append(p)
         return players
-    
+
     @property
     def available_seats(self):
         seats = set(range(1, 13))
@@ -96,7 +96,7 @@ class Room(db.Model):
             if p.seat:
                 seats -= set([p.seat])
         return list(seats)
-    
+
     @property
     def seated_players(self):
         players = []
@@ -104,18 +104,18 @@ class Room(db.Model):
             if not p.is_host and p.seat:
                 players.append(p)
         return players
-    
+
     @property
     def is_full(self):
         if len(self.seats == 0):
             return True
         else:
             return False
-    
+
     @property
     def template(self):
         return self.game.template
-    
+
     @property
     def survivals(self):
         survivals = []
@@ -123,7 +123,7 @@ class Room(db.Model):
             if not p.is_dead:
                 survivals.append(p)
         return survivals
-    
+
     def allow_votes(self):
         if self.round == "警长竞选":
             for p in self.survivals:
@@ -136,16 +136,16 @@ class Room(db.Model):
                 p.capable_for_vote = True
                 p.is_candidate = True
         db.session.commit()
-    
+
     def disable_votes(self):
         for p in self.survivals:
             p.capable_for_vote = False
         db.session.commit()
-    
+
     def set_round(self, round_name):
         self.game.current_round = round_name
         db.session.commit()
-    
+
     def view_vote_results(self, round_name):
         results = []
         for p in self.seated_players:
@@ -165,6 +165,8 @@ class Room(db.Model):
         for p in self.survivals:
             if p.seat == seat:
                 return p
+        else:
+            return None
 
     def set_sheriff(self, seat):
         for p in self.seated_players:
@@ -172,23 +174,30 @@ class Room(db.Model):
         if seat != 0:
             self.player_at(seat).is_sheriff = True
         db.session.commit()
-    
+
     def campaign(self, seat):
         self.player_at(seat).in_sheriff_campaign = True
         self.player_at(seat).sheriff_campaigned = True
         db.session.commit()
-    
+
     def quit_campaign(self, seat):
         self.player_at(seat).in_sheriff_campaign = False
         self.player_at(seat).sheriff_campaigned = True
         db.session.commit()
-    
+
     def kill(self, seat, method="死亡"):
         self.player_at(seat).death_method = method
         self.player_at(seat).is_dead = True
         db.session.commit()
-        
-            
+
+    def has_user(self, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        player = user.current_role(self.name)
+        if player in self.players:
+            return True
+        else:
+            return False
+    
     
     
 class Player(db.Model):
@@ -219,6 +228,7 @@ class Player(db.Model):
     def description(self):
         description = {
             "seat": int(self.seat),
+            "avatar": self.user.avatar(),
             "name": self.name,
             "character": self.character,
             "death": self.death_method if self.is_dead else "存活",
@@ -228,6 +238,20 @@ class Player(db.Model):
         }
         return description
 
+    def sit_at(self, seat):
+        if self.is_seated:
+            raise ValueError(f"You are seated at {self.seat}")
+        if seat not in self.room.available_seats:
+            raise ValueError(f"Someone is sitting at {seat}")
+        self.seat = seat
+        db.session.commit()
+    
+    def stand_up(self):
+        if not self.is_seated:
+            raise ValueError(f"You are not seated")
+        self.seat = None
+        db.session.commit()
+            
 
 
 

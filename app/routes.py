@@ -2,11 +2,12 @@ from flask import render_template, flash, redirect, url_for, request, jsonify
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
 
-from app import app, db
+from app import app, db, api
 from app.forms import (LoginForm, RegistrationForm, CreateGameForm, 
     GameRoundForm, SeatForm,TemplateForm)
 from app.models import User, Vote, Game, Room, Player
-from app.tools import random_with_N_digits, assign_character
+from app.tools import random_with_n_digits, assign_character
+from app.apis import Table, Seat
 
 
 
@@ -100,17 +101,9 @@ def room(room_name):
             form = GameRoundForm()
             return render_template('room.html', title='游戏进行中', room=room, form=form)
         else:
-            if current_user.current_role(room_name).is_seated:
-                return render_template('room.html', title='游戏进行中', room=room)
-            else:
-                seat_form = SeatForm()
-                if seat_form.is_submitted():
-                    role = current_user.current_role(room_name)
-                    role.character = assign_character(room_name)
-                    role.seat = int(seat_form.seat.data)
-                    db.session.commit()
-                
-                return render_template('room.html', title='游戏进行中', room=room, seat_form=seat_form)
+            role = current_user.current_role(room_name)
+            db.session.commit()
+            return render_template('room.html', title='游戏进行中', room=room)
     else:
         return redirect(url_for('login'))
 
@@ -118,28 +111,20 @@ def room(room_name):
 # APIs
 # TODO: use flask-restful later
 
-@app.route('/room/<room_name>/seats', methods=['GET'])
-@login_required
-def seats(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    seated_players = room.seated_players
-    results = []
-    for p in seated_players:
-        results.append(p.description)
-    return jsonify({'results': results})
-
-@app.route('/room/<room_name>/available_seats', methods=['GET'])
-@login_required
-def available_seats(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    return jsonify({'seats': room.available_seats})
-
+api.add_resource(Table, '/room/<room_name>/<user_id>/seats')
+api.add_resource(Seat, '/room/<room_name>/<user_id>/seat')
 
 @app.route('/room/<room_name>/game_status', methods=['GET'])
 @login_required
 def game_status(room_name):
     room = Room.query.filter_by(name=room_name).first()
     return jsonify({'status': room.game.status})
+
+@app.route('/room/<room_name>/available_seats', methods=['GET'])
+@login_required
+def available_seats(room_name):
+    room = Room.query.filter_by(name=room_name).first()
+    return jsonify({'seats': room.available_seats})
 
 
 @app.route('/room/<room_name>/vote', methods=['POST'])
