@@ -287,6 +287,11 @@
         {% if current_user.current_role(room.name).is_seated %}
             <h3> 你的座位为 {{current_user.current_role(room.name).seat}} </h3>
             <h3> 你的角色为 {{current_user.current_role(room.name).character}} </h3>
+            <p><img id="character-logo-img" 
+                src="{{url_for('static', filename='character_logo/' + current_user.current_role(room.name).character + '.png')}}"
+                width=128 height=128
+                >
+            </p>
                 <label for="vote" id="vote-label"></label><br>
                 <select name="vote" id="vote-select"></select>
                 <p>
