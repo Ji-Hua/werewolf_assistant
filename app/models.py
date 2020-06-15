@@ -218,7 +218,7 @@ class Player(db.Model):
     
     @property
     def is_seated(self):
-        return self.seat is not None
+        return (self.seat is not None) and (self.seat != 0)
     
     @property
     def name(self):
@@ -230,8 +230,8 @@ class Player(db.Model):
             "seat": int(self.seat),
             "avatar": self.user.avatar(),
             "name": self.name,
-            "character": self.character,
-            "death": self.death_method if self.is_dead else "存活",
+            "character": (self.character if self.character else '-'),
+            "death": (self.death_method if self.is_dead else "存活"),
             "is_sheriff": self.is_sheriff,
             "in_campaign": self.in_sheriff_campaign,
             "campaigned": self.sheriff_campaigned

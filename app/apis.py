@@ -23,7 +23,6 @@ class Table(Resource):
 
 class Seat(Resource):
     def post(self, room_name, user_id):
-        print('post seat')
         user = User.query.filter_by(id=user_id).first()
         room = Room.query.filter_by(name=room_name).first()
         if room.has_user(user.id) and not user.is_host(room.name):
@@ -32,6 +31,7 @@ class Seat(Resource):
             parser.add_argument('seat', type=int, help='Seat taken by user')
             args = parser.parse_args()
             seat = args['seat']
+            print(seat)
             if (player.seat is None) or (player.seat == 0):
                 if seat == 0:
                     pass

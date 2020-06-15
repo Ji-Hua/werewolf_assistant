@@ -114,9 +114,9 @@ def room(room_name):
 api.add_resource(Table, '/room/<room_name>/<user_id>/seats')
 api.add_resource(Seat, '/room/<room_name>/<user_id>/seat')
 
-@app.route('/room/<room_name>/game_status', methods=['GET'])
+@app.route('/room/<room_name>/<user_id>/game_status', methods=['GET'])
 @login_required
-def game_status(room_name):
+def game_status(room_name, user_id):
     room = Room.query.filter_by(name=room_name).first()
     return jsonify({'status': room.game.status})
 

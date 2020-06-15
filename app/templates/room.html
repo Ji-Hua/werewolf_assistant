@@ -5,57 +5,6 @@
     <h4>当前游戏设置为 {{ room.game.template }}</h4>
     {% if current_user.is_host(room.name) %}
         <h3>你为本游戏的上帝</h3>
-    {% else %}
-        <div id="player-seat-form-div">
-        </div>
-        <script>
-            var player_seat_api_url = "/room/" + {{ room.name }} + "/" + {{ current_user.id }} + "/seat";
-            function fetchseat(){
-                $.ajax({
-                    url: player_seat_api_url,
-                    type: 'GET',
-                    success: function(response){
-                        console.log(response.seat);
-                        console.log(response.available);
-                        if (response.seat == 0) {
-                            var formString = "<label for='seat-select'>请选择你的座位</label><br>"
-                            formString += "<select id='seat-select'>"
-                            for(var i = 0; i < response.available.length; i++) {
-                                formString += "<option value='" + response.available[i] + "'>" + response.available[i] + "</option>";
-                            };
-                            formString += "</select><br>"
-                            formString += "<input id='sit-button' name='submit' type='submit' value='坐下'>"
-                            $("#player-seat-form-div").html($(formString));
-                            $("#sit-button").click(function(){
-                                var seat = $( "#seat-select option:selected" ).val();
-                                var data = {
-                                    seat: seat
-                                };
-                                console.log(data);
-                                $.ajax({
-                                    type: "POST",
-                                    url: player_seat_api_url,
-                                    data: data,
-                                    success: function(response) {
-                                        if (response.seat == seat) {
-                                            console.log('落座成功')
-                                        } else {
-                                            console.log('落座失败')
-                                        }
-                                        
-                                    }
-                                })
-                            })
-                        }
-                        
-                    }
-                });
-            }
-            
-            $(document).ready(function(){
-                setInterval(fetchseat, 2000);
-            });
-        </script>
     {% endif %}
     <div id='player-status'>
         <table id='player-status-table'>
@@ -66,7 +15,7 @@
                 <th>角色名</th>
                 <th>存活状态</th>
                 <th>警徽状态</th>
-                <th>动作</th>
+                <th>行动</th>
             <tr>
         </thead>
         <tbody>
@@ -339,29 +288,29 @@
 
         </script>
     {% else %}
-        
-            <label for="vote" id="vote-label"></label><br>
-            <select name="vote" id="vote-select"></select>
-            <p>
-                <input id="vote-button" name="submit" type="submit" value="投票">
-            </p>
-            <br>
-            <p id='vote-stage'></p>
-            <div id='vote-results' hidden>
-                <p id='vote-results-most-voted'></p>
-                <table id='vote-results-table'>
-                <thead>
-                    <tr>
-                        <th>轮次</th>
-                        <th>玩家</th>
-                        <th>投票给</th>
-                    <tr>
-                </thead>
-                <tbody>
-                </tbody>
-                </table>
-            </div>
-        <script>
+        <label for="vote" id="vote-label"></label><br>
+        <select name="vote" id="vote-select"></select>
+        <p>
+            <input id="vote-button" name="submit" type="submit" value="投票">
+        </p>
+        <br>
+        <p id='vote-stage'></p>
+        <div id='vote-results' hidden>
+            <p id='vote-results-most-voted'></p>
+            <table id='vote-results-table'>
+            <thead>
+                <tr>
+                    <th>轮次</th>
+                    <th>玩家</th>
+                    <th>投票给</th>
+                <tr>
+            </thead>
+            <tbody>
+            </tbody>
+            </table>
+        </div>
+
+        <script type="module">
             var status_api_url = "/room/" + {{ room.name }} + "/game_status";
             var candidates_api_url = "/room/" + {{ room.name }} + "/candidates";
             var vote_api_url = "/room/" + {{ room.name }} + "/vote";
@@ -397,9 +346,10 @@
                 });
             }
             
-            $(document).ready(function(){
-                setInterval(fetchstatus, 2000);
-            });
+            {# $(document).ready(function(){
+                    setInterval(fetchstatus, 2000);
+                });  #} 
+                
 
             $("#vote-button").click(function(){
                 var data = {
@@ -424,57 +374,16 @@
                 })
             })
 
-            var seat_api_url = "/room/" + {{ room.name }} + "/" + {{ current_user.id }} + "/seats";
-            function fetchseats(){
-                $.ajax({
-                    url: seat_api_url,
-                    type: 'get',
-                    success: function(response){
-                        let survivals = [];
-                        var data = response.results;
-                        for(var i = 0; i < data.length; i++) {
-                            var row = data[i];
-                            var seat = row.seat;
-                            $("#player-status-table-name-" + seat).text(row.name);
-                            $("#player-status-table-character-" + seat).text(row.character);
-                            $("#player-status-table-death-" + seat).text(row.death);
-                            if (row.death == "存活") {
-                                survivals.push(seat);
-                                var action = "<input type='submit' id='player-action-button-" + seat + "'>"
-                                $("#player-status-table-action-" + seat).html(action);
-                                if (current_stage == "警长竞选") {
-                                    if (row.in_campaign) {
-                                        var action_value = "退选";
-                                        var action_class = "action-quit";
-                                        var sheriff_value = "警上";
-                                    } else {
-                                        var action_value = "竞选";
-                                        var action_class = "action-campaign";
-                                        var sheriff_value = (row.campaigned) ? "退水" : "警下" 
-                                    }
-                                } else {
-                                    var action_value = "死亡";
-                                    var action_class = "action-kill";
-                                    var sheriff_value = (row.is_sheriff) ? '👮' : ''
-                                }
-                                $("#player-action-button-" + seat).attr('value', action_value).attr('data-seat', seat).attr('class', action_class);
-                                $("#player-status-table-sheriff-" + seat).text(sheriff_value);
-                                if (sheriff_value == "退水") {
-                                    $("#player-action-button-" + seat).hide()
-                                }
-                                bindAction();
-                            }
-                        }
-                        var sheriffOptionsAsString = "<option value='0'>销毁</option>";
-                        for(var i = 0; i < survivals.length; i++) {
-                            sheriffOptionsAsString += "<option value='" +  survivals[i] + "'>" +  survivals[i] + "</option>";
-                        };
-                        $("#sheriff-select").find('option').remove().end().append($(sheriffOptionsAsString));
-                    }
-                });
-            }
-            $(document).ready(function(){
-                setInterval(fetchseats, 3000);
+            import { playerFetchSeats } from '{{ url_for('static', filename='js/seats.js') }}';
+            var api_base = "/room/" + {{ room.name }} + "/" + {{ current_user.id }};
+
+            $(document).ready(function() {
+                setInterval(function() {
+                        playerFetchSeats(api_base,
+                            {{ current_user.id}}
+                        )
+                    }, 1000
+                );
             });
         </script>
         
