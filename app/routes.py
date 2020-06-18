@@ -7,7 +7,7 @@ from app.forms import (LoginForm, RegistrationForm, CreateGameForm,
     GameRoundForm, SeatForm,TemplateForm)
 from app.models import User, Vote, Game, Room, Player
 from app.tools import random_with_n_digits, assign_character
-from app.apis import Table, Seat
+from app.apis import Table, Seat, Character, Round
 
 
 
@@ -113,6 +113,8 @@ def room(room_name):
 
 api.add_resource(Table, '/room/<room_name>/<user_id>/seats')
 api.add_resource(Seat, '/room/<room_name>/<user_id>/seat')
+api.add_resource(Round, '/room/<room_name>/<user_id>/round')
+api.add_resource(Character, '/room/<room_name>/<user_id>/character')
 
 @app.route('/room/<room_name>/<user_id>/game_status', methods=['GET'])
 @login_required
@@ -120,11 +122,11 @@ def game_status(room_name, user_id):
     room = Room.query.filter_by(name=room_name).first()
     return jsonify({'status': room.game.status})
 
-@app.route('/room/<room_name>/available_seats', methods=['GET'])
-@login_required
-def available_seats(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    return jsonify({'seats': room.available_seats})
+# @app.route('/room/<room_name>/available_seats', methods=['GET'])
+# @login_required
+# def available_seats(room_name):
+#     room = Room.query.filter_by(name=room_name).first()
+#     return jsonify({'seats': room.available_seats})
 
 
 @app.route('/room/<room_name>/vote', methods=['POST'])
@@ -150,21 +152,6 @@ def vote(room_name):
         return {"vote": vote_for}
     else:
         return {"vote": -1}
-    
-    
-@app.route('/room/<room_name>/round', methods=['POST'])
-@login_required
-def round(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    if request.form['allow_vote'] == 'true':
-        round_name = request.form['round_name']
-        room.set_round(round_name)
-        room.allow_votes()
-        return jsonify({'vote': 1})
-    else:
-        room.disable_votes()
-        room.set_round('')
-        return jsonify({'vote': 0})
     
 @app.route('/room/<room_name>/candidates', methods=['GET'])
 @login_required

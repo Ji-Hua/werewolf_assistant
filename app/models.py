@@ -1,4 +1,7 @@
 from datetime import datetime
+import json
+import os
+import random
 
 from flask_login import UserMixin
 from hashlib import md5
@@ -107,7 +110,7 @@ class Room(db.Model):
 
     @property
     def is_full(self):
-        if len(self.seats == 0):
+        if len(self.available_seats) == 0:
             return True
         else:
             return False
@@ -124,7 +127,18 @@ class Room(db.Model):
                 survivals.append(p)
         return survivals
 
-    def allow_votes(self):
+    @property
+    def description(self):
+        desc = {
+            "template": self.template,
+            "current_stage": self.round,
+            "players": []
+        }
+        for player in self.seated_players:
+            desc["players"].append(player.description)
+        return desc
+
+    def enable_votes(self):
         if self.round == "警长竞选":
             for p in self.survivals:
                 if not p.sheriff_campaigned:
@@ -198,6 +212,24 @@ class Room(db.Model):
         else:
             return False
     
+    def build_character_queue(self, template):
+        queue = []
+        for key, value in template.items():
+            for _ in range(value):
+                queue.append(key)
+        random.shuffle(queue)
+        return queue
+
+    def assign_characters(self):
+        data_path = os.path.join(os.path.dirname(__file__), 'data/')
+        with open(os.path.join(data_path, 'game_config.json')) as f:
+            game_templates = json.load(f)
+        char_queue = self.build_character_queue(
+            game_templates[self.template])
+        # if self.is_full:
+        for i, p in enumerate(self.seated_players):
+            p.character = char_queue[i]
+            db.session.commit()
     
     
 class Player(db.Model):
@@ -259,7 +291,7 @@ class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     template = db.Column(db.String(120), index=True, nullable=False)
-    current_round = db.Column(db.String(120))
+    current_round = db.Column(db.String(120), default='准备阶段')
     is_active = db.Column(db.Boolean, default=True)
     start_time = db.Column(db.DateTime, index=True, default=datetime.now)
     finish_time = db.Column(db.DateTime, index=True)

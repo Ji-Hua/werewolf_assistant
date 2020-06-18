@@ -12,7 +12,6 @@ export function playerFetchSeats(url_base, user_id) {
     url: url_base + "/seats",
     type: 'GET',
     success: function(response) {
-      console.log(response);
       let survivals = [];
       var data = response.results;
       var current_stage = null;
@@ -125,7 +124,6 @@ export function playerFetchSeats(url_base, user_id) {
         var data = {
           seat: seat
         };
-        console.log(data);
         $.ajax({
           type: "POST",
           url: url_base + "/seat",
@@ -145,7 +143,6 @@ export function playerFetchSeats(url_base, user_id) {
         var data = {
           seat: 0
         };
-        console.log(data);
         $.ajax({
           type: "POST",
           url: url_base + "/seat",

@@ -5,7 +5,49 @@
     <h4>当前游戏设置为 {{ room.game.template }}</h4>
     {% if current_user.is_host(room.name) %}
         <h3>你为本游戏的上帝</h3>
+        <div id='pregame-action-div'>
+            <input id="assign-characters-button" name="submit" type="submit" value="分发身份">
+            <input id="start-game-button" name="submit" type="submit" value="开始游戏"><br>
+        <div>
+        <br>
+        <div id='ingame-action-div' hidden>
+            <div id='round-info-div'>
+                <label for="round">选择当前轮次</label><br>
+                <select id="round-select" name="round">
+                    <option value="警长竞选">警长竞选</option>
+                    <option value="第1天">第1天</option>
+                    <option value="第2天">第2天</option>
+                    <option value="第3天">第3天</option>
+                    <option value="第4天">第4天</option>
+                    <option value="第5天">第5天</option>
+                </select>
+                <input id="round-button" name="submit" type="submit" value="确认阶段"><br>
+            </div>
+            <br>
+            <select id='sheriff-select'></select>
+            <input id="sheriff-button" name="submit" type="submit" value="授予警徽">
+            <br>
+            <div id='vote-buttons-div'>
+                <input id="start-vote-button" name="submit" type="submit" value="开始投票">
+                <input id="end-vote-button" name="submit" type="submit" value="结束投票">
+                <input id="view-vote-button" name="submit" type="submit" value="查看投票">
+            </div>
+            <br>
+        </div>
+        <script type="module">
+            import { updateRound, assignCharacters } from '{{ url_for('static', filename='js/host.js') }}';
+            var api_base = "/room/" + {{ room.name }} + "/" + {{ current_user.id }};
+
+            $("#assign-characters-button").click(function() {
+                updateRound(api_base, "分发身份");
+                assignCharacters(api_base);
+            })
+        </script>
     {% endif %}
+    <h3>游戏状态<h3>
+    <br>
+        <h4 id='round-info-head'></h4>
+    <br>
     <div id='player-status'>
         <table id='player-status-table'>
         <thead>
@@ -15,6 +57,7 @@
                 <th>角色名</th>
                 <th>存活状态</th>
                 <th>警徽状态</th>
+                <th>投票给</th>
                 <th>行动</th>
             <tr>
         </thead>
@@ -26,79 +69,14 @@
                 <td id='player-status-table-character-{{i}}'></td>
                 <td id='player-status-table-death-{{i}}'></td>
                 <td id='player-status-table-sheriff-{{i}}'></td>
+                <td id='player-status-table-votefor-{{i}}'></td>
                 <td id='player-status-table-action-{{i}}'></td>
             </tr>
         {% endfor %}
         </tbody>
         </table>
     </div>
-    <script>
-        function viewResults() {
-            $("#vote-results-table tbody").html('');
-            var round_name = $( "#round-select option:selected" ).val();
-            var result_api_url = "/room/" + {{ room.name }} + "/results/" + round_name;
-            $.ajax({
-                type: "GET",
-                url: result_api_url,
-                success: function(response) {
-                    var data = response.results;
-                    for(var i = 0; i < data.length; i++) {
-                        var vote_for = data[i].vote_for;
-                        if (vote_for == 0) {
-                            vote_for = "弃票"
-                        };
-                        var row = "<tr><td>" + round_name + "</td><td>" + data[i].vote_from + "</td><td>" + vote_for + "</td></tr>";
-                        $('#vote-results-table tbody').append(row);
-                    };
-                    var most_voted = response.most_voted;
-                    console.log(most_voted)
-                    if (most_voted.length == 0) {
-                        var text_most_voted = "无人得票"
-                    } else {
-                        var text_most_voted = "得票最多的玩家为";
-                        for(var i = 0; i < most_voted.length; i++) {
-                            text_most_voted = text_most_voted + " " + most_voted[i];
-                        }
-                        text_most_voted += " 号玩家"
-                    }
-
-                    $("#vote-results-most-voted").text(text_most_voted);
-                    $("#vote-results").show();
-                }
-            })
-        }
-    </script>
     {% if current_user.is_host(room.name) %}
-        <h3>你为本游戏的上帝</h3>
-        <br>
-         <select id='sheriff-select'></select>
-         <input id="sheriff-button" name="submit" type="submit" value="授予警徽">
-        <br>
-        {{ form.round.label }}<br>
-        {{ form.round(id='round-select') }}
-        <input id="round-button" name="submit" type="submit" value="确认阶段"><br>
-        <input id="start-vote-button" name="submit" type="submit" value="开始投票">
-        <input id="end-vote-button" name="submit" type="submit" value="结束投票">
-        <input id="view-vote-button" name="submit" type="submit" value="查看投票"><br>
-
-
-        <p id='vote-stage'></p>
-        <div id='vote-results' hidden>
-            <p id='vote-results-most-voted'></p>
-            <table id='vote-results-table'>
-            <thead>
-                <tr>
-                    <th>轮次</th>
-                    <th>玩家</th>
-                    <th>投票给</th>
-                <tr>
-            </thead>
-            <tbody>
-            </tbody>
-            </table>
-        </div>
-
-
         <script>
             var sheriff_api_url = "/room/" + {{ room.name }} + "/sheriff";
             $("#sheriff-button").click(function(){
@@ -166,8 +144,6 @@
                 });
                 viewResults();
             })
-
-            $("#view-vote-button").click(viewResults)
 
             var seat_api_url = "/room/" + {{ room.name }} + "/" + {{ current_user.id }} + "/seats";
             function fetchseats(){
@@ -374,7 +350,7 @@
                 })
             })
 
-            import { playerFetchSeats } from '{{ url_for('static', filename='js/seats.js') }}';
+            import { playerFetchSeats } from '{{ url_for('static', filename='js/user.js') }}';
             var api_base = "/room/" + {{ room.name }} + "/" + {{ current_user.id }};
 
             $(document).ready(function() {

@@ -56,3 +56,9 @@ table {
     align-content: center;
     text-align: center;
 }
+
+#player-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

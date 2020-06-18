@@ -58,3 +58,59 @@ class Seat(Resource):
             return {'seat': seat, 'available': room.available_seats}
         else:
             return 404
+
+
+class Character(Resource):
+    def get(self, room_name, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        room = Room.query.filter_by(name=room_name).first()
+        if room.has_user(user.id) and not user.is_host(room.name):
+            player = user.current_role(room.name)
+        return {'character': player.character}
+    
+    
+    def post(self, room_name, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        room = Room.query.filter_by(name=room_name).first()
+        if user.is_host(room.name):
+            parser = reqparse.RequestParser()
+            parser.add_argument('assign_characters', type=bool)
+            args = parser.parse_args()
+            if args['assign_characters']:
+                room.assign_characters()
+        return {'data': room.description}
+
+
+class Round(Resource):
+    def post(self, room_name, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        room = Room.query.filter_by(name=room_name).first()
+        if user.is_host(room.name):
+            parser = reqparse.RequestParser()
+            parser.add_argument('round_name', type=str,
+                                help='Current round of this game')
+            parser.add_argument('allow_vote', type=bool)
+            args = parser.parse_args()
+            round_name = args['round_name']
+            room.set_round(round_name)
+
+            # Note: different stages of the game
+            if round_name == "准备阶段":
+                pass # Allow new player sit down or stand up
+            elif round_name == "分发身份":
+                pass
+            else:
+                if args['allow_vote']:
+                    room.enable_votes()
+                else:
+                    room.disable_votes()
+            return {'round_name': room.round}
+    
+    def get(self, room_name, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        room = Room.query.filter_by(name=room_name).first()
+        if room.has_user(user.id):
+            return {
+                'round_name': room.round,
+                'vote': user.current_role(room.name).capable_for_vote
+            }
