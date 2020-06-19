@@ -1,4 +1,5 @@
 from flask_restful import Resource, reqparse
+from app import db
 from app.models import User, Vote, Game, Room, Player
 from app.tools import assign_character, MAX_PLAYERS
 
@@ -114,3 +115,34 @@ class Round(Resource):
                 'round_name': room.round,
                 'vote': user.current_role(room.name).capable_for_vote
             }
+
+class Votes(Resource):
+    def post(self, room_name, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        room = Room.query.filter_by(name=room_name).first()
+        if room.has_user(user.id) and not user.is_host(room.name):
+            parser = reqparse.RequestParser()
+            parser.add_argument('vote_for', type=int)
+            parser.add_argument('round_name', type=str)
+            args = parser.parse_args()
+            player = user.current_role(room.name)
+            print(player.capable_for_vote)
+            if player.capable_for_vote:
+                game = Room.query.filter_by(name=room.name).first().game
+                prev_votes = Vote.query.filter_by(
+                    game_id=game.id, player_id=player.id, round=args['round_name']).all()
+                if prev_votes:
+                    for v in prev_votes:
+                        db.session.delete(v)
+                    db.session.commit()
+                vote = Vote(game_id=game.id, player_id=player.id,
+                            vote_for=args['vote_for'], round=args['round_name'])
+                db.session.add(vote)
+                db.session.commit()
+                player.capable_for_vote = False
+                db.session.commit()
+                return {"vote": args['vote_for']}
+            else:
+                return {"vote": -1}
+        else:
+                return {"vote": -1}

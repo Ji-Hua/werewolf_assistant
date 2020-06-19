@@ -57,6 +57,11 @@ table {
     text-align: center;
 }
 
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
 #player-status {
     display: flex;
     align-items: center;

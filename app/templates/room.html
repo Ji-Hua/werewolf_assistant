@@ -2,13 +2,14 @@
 
 {% block content %}
     <h1>游戏 {{ room.name }}</h1>
-    <h4>当前游戏设置为 {{ room.game.template }}</h4>
+    <h4>当前游戏设置为 <span>{{ room.game.template }}</span></h4>
+    <h4>当前游戏阶段为 <span id='round-info-head'></span></h4>
     {% if current_user.is_host(room.name) %}
         <h3>你为本游戏的上帝</h3>
         <div id='pregame-action-div'>
             <input id="assign-characters-button" name="submit" type="submit" value="分发身份">
-            <input id="start-game-button" name="submit" type="submit" value="开始游戏"><br>
-        <div>
+            <input id="start-game-button" name="submit" type="submit" value="进入游戏"><br>
+        </div>
         <br>
         <div id='ingame-action-div' hidden>
             <div id='round-info-div'>
@@ -41,291 +42,66 @@
             $("#assign-characters-button").click(function() {
                 updateRound(api_base, "分发身份");
                 assignCharacters(api_base);
+                fetchRound(api_base)
+            });
+
+            $("#start-game-button").click(function() {
+                updateRound(api_base, "等待上帝指令");
+                $('#ingame-action-div').show();
+                $('#pregame-action-div').hide();
+                fetchRound(api_base);
+            });
+            $("#round-button").click(function(){
+                var current_stage = $( "#round-select option:selected" ).val();
+                updateRound(api_base, current_stage);
+                fetchRound(api_base);
             })
         </script>
     {% endif %}
-    <h3>游戏状态<h3>
-    <br>
-        <h4 id='round-info-head'></h4>
-    <br>
+    <h3>角色状态<h3>
     <div id='player-status'>
         <table id='player-status-table'>
-        <thead>
-            <tr>
-                <th>座位号</th>
-                <th>玩家名</th>
-                <th>角色名</th>
-                <th>存活状态</th>
-                <th>警徽状态</th>
-                <th>投票给</th>
-                <th>行动</th>
-            <tr>
-        </thead>
-        <tbody>
-            {% for i in range(1, 13) %}
-            <tr class='player-status-table-row' id='player-status-table-row-{{i}}'>
-                <td id='player-status-table-seat-{{i}}'>{{i}}</td>
-                <td id='player-status-table-name-{{i}}'></td>
-                <td id='player-status-table-character-{{i}}'></td>
-                <td id='player-status-table-death-{{i}}'></td>
-                <td id='player-status-table-sheriff-{{i}}'></td>
-                <td id='player-status-table-votefor-{{i}}'></td>
-                <td id='player-status-table-action-{{i}}'></td>
-            </tr>
-        {% endfor %}
-        </tbody>
+            <thead>
+                <tr>
+                    <th>座位号</th>
+                    <th>玩家名</th>
+                    <th>角色名</th>
+                    <th>存活状态</th>
+                    <th>警徽状态</th>
+                    <th>投票给</th>
+                    <th>行动</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(1, 13) %}
+                <tr class='player-status-table-row' id='player-status-table-row-{{i}}'>
+                    <td id='player-status-table-seat-{{i}}'>{{i}}</td>
+                    <td id='player-status-table-name-{{i}}'></td>
+                    <td id='player-status-table-character-{{i}}'></td>
+                    <td id='player-status-table-death-{{i}}'></td>
+                    <td id='player-status-table-sheriff-{{i}}'></td>
+                    <td id='player-status-table-votefor-{{i}}'></td>
+                    <td id='player-status-table-action-{{i}}'></td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
     {% if current_user.is_host(room.name) %}
-        <script>
-            var sheriff_api_url = "/room/" + {{ room.name }} + "/sheriff";
-            $("#sheriff-button").click(function(){
-                var data = {
-                    seat: $( "#sheriff-select option:selected" ).val(),
-                };
-                console.log(data)
-                $.ajax({
-                    type: "POST",
-                    url: sheriff_api_url,
-                    data: data,
-                    success: function(response) {
-                        if (response.sheriff) {
-                            console.log(response.sheriff)
-                        }
-                    }
-                })
-            })
-
-            $("#round-button").click(function(){
-                current_stage = $( "#round-select option:selected" ).val();
-            })
-
-
-
-
-            var current_stage = "警长竞选";
-            var round_api_url = "/room/" + {{ room.name }} + "/round";
-            $("#start-vote-button").click(function(){
-                current_stage = $( "#round-select option:selected" ).val()
-                var data = {
-                    round_name: current_stage,
-                    allow_vote: true,
-                };
-                $.ajax({
-                    type: "POST",
-                    url: round_api_url,
-                    data: data,
-                    success: function(response) {
-                        if (response.vote == 1) {
-                            $("#vote-stage").text('投票已开启')
-                        } else {
-                            $("#vote-stage").text('投票已结束')
-                        }
-                    }
-                })
-            })
-
-            $("#end-vote-button").click(function(){
-                var data = {
-                    round_name: $( "#round-select option:selected" ).val(),
-                    allow_vote: false,
-                };
-                $.ajax({
-                    type: "POST",
-                    url: round_api_url,
-                    data: data,
-                    success: function(response) {
-                        if (response.vote == 1) {
-                            $("#vote-stage").text('投票已开启')
-                        } else {
-                            $("#vote-stage").text('投票已结束')
-                        }
-                    }
-                });
-                viewResults();
-            })
-
-            var seat_api_url = "/room/" + {{ room.name }} + "/" + {{ current_user.id }} + "/seats";
-            function fetchseats(){
-                $.ajax({
-                    url: seat_api_url,
-                    type: 'get',
-                    success: function(response){
-                        let survivals = [];
-                        var data = response.results;
-                        for(var i = 0; i < data.length; i++) {
-                            var row = data[i];
-                            var seat = row.seat;
-                            $("#player-status-table-name-" + seat).text(row.name);
-                            $("#player-status-table-character-" + seat).text(row.character);
-                            $("#player-status-table-death-" + seat).text(row.death);
-                            if (row.death == "存活") {
-                                survivals.push(seat);
-                                var action = "<input type='submit' id='player-action-button-" + seat + "'>"
-                                $("#player-status-table-action-" + seat).html(action);
-                                if (current_stage == "警长竞选") {
-                                    if (row.in_campaign) {
-                                        var action_value = "退选";
-                                        var action_class = "action-quit";
-                                        var sheriff_value = "警上";
-                                    } else {
-                                        var action_value = "竞选";
-                                        var action_class = "action-campaign";
-                                        var sheriff_value = (row.campaigned) ? "退水" : "警下" 
-                                    }
-                                } else {
-                                    var action_value = "死亡";
-                                    var action_class = "action-kill";
-                                    var sheriff_value = (row.is_sheriff) ? '👮' : ''
-                                }
-                                $("#player-action-button-" + seat).attr('value', action_value).attr('data-seat', seat).attr('class', action_class);
-                                $("#player-status-table-sheriff-" + seat).text(sheriff_value);
-                                if (sheriff_value == "退水") {
-                                    $("#player-action-button-" + seat).hide()
-                                }
-                                bindAction();
-                            }
-                        }
-                        var sheriffOptionsAsString = "<option value='0'>销毁</option>";
-                        for(var i = 0; i < survivals.length; i++) {
-                            sheriffOptionsAsString += "<option value='" +  survivals[i] + "'>" +  survivals[i] + "</option>";
-                        };
-                        $("#sheriff-select").find('option').remove().end().append($(sheriffOptionsAsString));
-                    }
-                });
-            }
-            $(document).ready(function(){
-                setInterval(fetchseats, 3000);
+        <script type="module">
+            import { hostFetchSeats } from '{{ url_for('static', filename='js/host.js') }}';
+            var api_base = "/room/" + {{ room.name }} + "/" + {{ current_user.id }};
+             $(document).ready(function() {
+                setInterval(function() {
+                        hostFetchSeats(api_base,
+                            {{ current_user.id }}
+                        )
+                    }, 1000
+                );
             });
-
-            var kill_api_url = "/room/" + {{ room.name }} + "/kill";
-            var campaign_api_url = "/room/" + {{ room.name }} + "/campaign";
-            function bindAction() {
-                $(".action-campaign").click(function(){
-                    console.log($(this).data('seat'))
-                    var data = {
-                        seat: $(this).data('seat'),
-                        campaign: true,
-                    };
-                    $.ajax({
-                        type: "POST",
-                        url: campaign_api_url,
-                        data: data,
-                        success: function(response) {
-                            if (response.campaign) {
-                                console.log('上警成功')
-                            } else {
-                                console.log('退选成功')
-                            }
-                            
-                        }
-                    })
-                })
-
-                $(".action-quit").click(function(){
-                    console.log($(this).data('seat'))
-                    var data = {
-                        seat: $(this).data('seat'),
-                        campaign: false,
-                    };
-                    $.ajax({
-                        type: "POST",
-                        url: campaign_api_url,
-                        data: data,
-                        success: function(response) {
-                            if (response.campaign) {
-                                console.log('上警成功')
-                            } else {
-                                console.log('退选成功')
-                            }
-                            
-                        }
-                    })
-                })
-
-                $(".action-kill").click(function(){
-                    console.log($(this).data('seat'))
-                    var data = {
-                        seat: $(this).data('seat'),
-                    };
-                    $.ajax({
-                        type: "POST",
-                        url: kill_api_url,
-                        data: data,
-                        success: function(response) {
-                            if (response.campaign) {
-                                console.log('死亡')
-                            }
-                        }
-                    })
-                })
-            }
-           
-
         </script>
     {% else %}
-        <label for="vote" id="vote-label"></label><br>
-        <select name="vote" id="vote-select"></select>
-        <p>
-            <input id="vote-button" name="submit" type="submit" value="投票">
-        </p>
-        <br>
-        <p id='vote-stage'></p>
-        <div id='vote-results' hidden>
-            <p id='vote-results-most-voted'></p>
-            <table id='vote-results-table'>
-            <thead>
-                <tr>
-                    <th>轮次</th>
-                    <th>玩家</th>
-                    <th>投票给</th>
-                <tr>
-            </thead>
-            <tbody>
-            </tbody>
-            </table>
-        </div>
-
         <script type="module">
-            var status_api_url = "/room/" + {{ room.name }} + "/game_status";
-            var candidates_api_url = "/room/" + {{ room.name }} + "/candidates";
-            var vote_api_url = "/room/" + {{ room.name }} + "/vote";
-            var prev_status = "";
-            var prev_stage = "";
-            function fetchstatus(){
-                $.ajax({
-                    url: status_api_url,
-                    type: 'get',
-                    success: function(response){
-                        console.log(response.status);
-                        $("#vote-label").text( response.status);
-                        if (response.status != prev_status) {
-                            prev_status = response.status;
-                            if (response.status != "等待上帝指令") {
-                                prev_stage = response.status;
-                                console.log(prev_stage);
-                                $("#vote-stage").text('投票已开启');
-                                $.getJSON(candidates_api_url, function(data) {
-                                    var optionsAsString = "<option value='0'>弃权</option>";
-                                    for(var i = 0; i < data.candidates.length; i++) {
-                                        optionsAsString += "<option value='" +  data.candidates[i] + "'>" +  data.candidates[i] + "</option>";
-                                    };
-                                    $("#vote-select").find('option').remove().end().append($(optionsAsString));
-                                });
-                            } else {
-                                $("#vote-stage").text('投票已关闭');
-                                $("#vote-select").find('option').remove().end();
-                                viewResults();
-                            }
-                        } 
-                    }
-                });
-            }
-            
-            {# $(document).ready(function(){
-                    setInterval(fetchstatus, 2000);
-                });  #} 
-                
 
             $("#vote-button").click(function(){
                 var data = {
@@ -350,13 +126,13 @@
                 })
             })
 
-            import { playerFetchSeats } from '{{ url_for('static', filename='js/user.js') }}';
+            import { playerFetchSeats } from '{{ url_for('static', filename='js/player.js') }}';
             var api_base = "/room/" + {{ room.name }} + "/" + {{ current_user.id }};
 
             $(document).ready(function() {
                 setInterval(function() {
                         playerFetchSeats(api_base,
-                            {{ current_user.id}}
+                            {{ current_user.id }}
                         )
                     }, 1000
                 );
@@ -364,7 +140,28 @@
         </script>
         
     {% endif %}
-    
+    <script>
+        function fetchRound(url_base) {
+            $.ajax({
+                type: "GET",
+                url: url_base + "/round",
+                success: function(response) {
+                    if (response.round_name) {
+                        $("#round-info-head").text(response.round_name)
+                    } else {
+                        console.log('获取回合失败')
+                    }
+                }
+            })
+        }
+        var api_base = "/room/" + {{ room.name }} + "/" + {{ current_user.id }};
+        $(document).ready(function() {
+            setInterval(function() {
+                    fetchRound(api_base, {{ current_user.id }})
+                }, 1000
+            );
+        });
+    </script>
     
     
 {% endblock %}

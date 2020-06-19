@@ -7,7 +7,7 @@ from app.forms import (LoginForm, RegistrationForm, CreateGameForm,
     GameRoundForm, SeatForm,TemplateForm)
 from app.models import User, Vote, Game, Room, Player
 from app.tools import random_with_n_digits, assign_character
-from app.apis import Table, Seat, Character, Round
+from app.apis import Table, Seat, Character, Round, Votes
 
 
 
@@ -78,7 +78,7 @@ def setup():
     form = TemplateForm()
     if current_user.is_authenticated:
         if form.validate_on_submit():
-            room_name = random_with_N_digits()
+            room_name = random_with_n_digits()
             room = Room(name=room_name)
             db.session.add(room)
             db.session.commit()
@@ -101,8 +101,6 @@ def room(room_name):
             form = GameRoundForm()
             return render_template('room.html', title='游戏进行中', room=room, form=form)
         else:
-            role = current_user.current_role(room_name)
-            db.session.commit()
             return render_template('room.html', title='游戏进行中', room=room)
     else:
         return redirect(url_for('login'))
@@ -115,43 +113,31 @@ api.add_resource(Table, '/room/<room_name>/<user_id>/seats')
 api.add_resource(Seat, '/room/<room_name>/<user_id>/seat')
 api.add_resource(Round, '/room/<room_name>/<user_id>/round')
 api.add_resource(Character, '/room/<room_name>/<user_id>/character')
+api.add_resource(Votes, '/room/<room_name>/<user_id>/vote')
 
-@app.route('/room/<room_name>/<user_id>/game_status', methods=['GET'])
-@login_required
-def game_status(room_name, user_id):
-    room = Room.query.filter_by(name=room_name).first()
-    return jsonify({'status': room.game.status})
-
-# @app.route('/room/<room_name>/available_seats', methods=['GET'])
+# @app.route('/room/<room_name>/<user_id>/vote', methods=['POST'])
 # @login_required
-# def available_seats(room_name):
-#     room = Room.query.filter_by(name=room_name).first()
-#     return jsonify({'seats': room.available_seats})
-
-
-@app.route('/room/<room_name>/vote', methods=['POST'])
-@login_required
-def vote(room_name):
-    player = Player.query.filter_by(id=int(request.form['player_id'])).first()
-    if player.capable_for_vote:
-        game = Room.query.filter_by(name=room_name).first().game
-        vote_for = int(request.form['vote_for'])
-        if vote_for <= 0 or vote_for > 12:
-            vote_for = 0
-        round = request.form['round']
-        prev_votes = Vote.query.filter_by(game_id=game.id, player_id=player.id, round=round).all()
-        if prev_votes:
-            for v in prev_votes:
-                db.session.delete(v)
-            db.session.commit()
-        vote = Vote(game_id=game.id, player_id=player.id, vote_for=vote_for, round=round)
-        db.session.add(vote)
-        db.session.commit()
-        player.capable_for_vote = False
-        db.session.commit()
-        return {"vote": vote_for}
-    else:
-        return {"vote": -1}
+# def vote(room_name, user_id):
+#     player = Player.query.filter_by(id=int(request.form['player_id'])).first()
+#     if player.capable_for_vote:
+#         game = Room.query.filter_by(name=room_name).first().game
+#         vote_for = int(request.form['vote_for'])
+#         if vote_for <= 0 or vote_for > 12:
+#             vote_for = 0
+#         round = request.form['round']
+#         prev_votes = Vote.query.filter_by(game_id=game.id, player_id=player.id, round=round).all()
+#         if prev_votes:
+#             for v in prev_votes:
+#                 db.session.delete(v)
+#             db.session.commit()
+#         vote = Vote(game_id=game.id, player_id=player.id, vote_for=vote_for, round=round)
+#         db.session.add(vote)
+#         db.session.commit()
+#         player.capable_for_vote = False
+#         db.session.commit()
+#         return {"vote": vote_for}
+#     else:
+#         return {"vote": -1}
     
 @app.route('/room/<room_name>/candidates', methods=['GET'])
 @login_required
