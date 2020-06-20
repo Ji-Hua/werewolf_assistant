@@ -98,7 +98,7 @@ class Round(Resource):
             parser = reqparse.RequestParser()
             parser.add_argument('round_name', type=str,
                                 help='Current round of this game')
-            parser.add_argument('allow_vote', type=bool)
+            parser.add_argument('allow_vote', type=int)
             args = parser.parse_args()
             round_name = args['round_name']
             room.set_round(round_name)
@@ -109,7 +109,7 @@ class Round(Resource):
             elif round_name == "分发身份":
                 pass
             else:
-                if args['allow_vote']:
+                if args['allow_vote'] == 1:
                     room.enable_votes()
                 else:
                     room.disable_votes()

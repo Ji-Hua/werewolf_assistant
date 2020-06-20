@@ -3,6 +3,7 @@ export function updateRound(url_base, round_name, vote) {
         round_name: round_name,
         allow_vote: vote,
     };
+    console.log(data)
     $.ajax({
         type: "POST",
         url: url_base + "/round",
@@ -55,7 +56,8 @@ export function hostFetchSeats(url_base, user_id) {
         success: function(response){
           let survivals = [];
           var current_stage = response.round_name;
-          fetchVoteResult(url_base);
+
+          fetchVoteResult(url_base, current_stage);
 
           for(var i = 0; i < data.length; i++) {
             var row = data[i];
@@ -150,21 +152,32 @@ export function hostFetchSeats(url_base, user_id) {
 }
 
 
-export function fetchVoteResult(url_base) {
-    $.ajax({
-      type: "GET",
-      url: url_base + "/vote",
-      success: function(response) {
-          $("#vote-stage-span").text(response.vote_stage);
-          $("#vote-max-span").text(response.most_voted);
-          for (var i = 0; i < response.results.length; i++) {
-            var row = response.results[i];
-            var vote_for = row.vote_for;
-            if (vote_for == 0) {
-              vote_for = "未投票"
-            }
-            $("#player-status-table-votefor-" + row.vote_from).text(vote_for);
-          }
+export function fetchVoteResult(url_base, stage) {
+  $.ajax({
+    type: "GET",
+    url: url_base + "/vote",
+    success: function(response) {
+      if (response.vote_stage == null)
+      {
+        $("#vote-stage-span").text('');
+      } else {
+        $("#vote-stage-span").text(response.vote_stage);
       }
-    })
-  }
+      $("#vote-max-span").text(response.most_voted);
+
+      var invalid_round = ["准备阶段", "分发身份", "等待上帝指令"];
+      for (var i = 0; i < response.results.length; i++) {
+        if (invalid_round.includes(stage)) {
+          $("#player-status-table-votefor-" + i).text('');
+        } else {
+          var row = response.results[i];
+          var vote_for = row.vote_for;
+          if (vote_for == 0) {
+            vote_for = "未投票"
+          }
+          $("#player-status-table-votefor-" + row.vote_from).text(vote_for);
+        }
+      }
+    }
+  })
+}

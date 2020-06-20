@@ -35,7 +35,7 @@
 
             $("#round-button").click(function(){
                 var current_stage = $( "#round-select option:selected" ).val();
-                updateRound(api_base, current_stage, false);
+                updateRound(api_base, current_stage, 0);
                 if (current_stage == "分发身份") {
                     assignCharacters(api_base);
                 }
@@ -44,18 +44,18 @@
 
             $("#start-vote-button").click(function(){
                 var current_stage = $( "#round-select option:selected" ).val();
-                let invalid_round = ["准备阶段", "分发身份", "等待上帝指令"]
-                if (!(current_stage in invalid_round)) {
-                    updateRound(api_base, current_stage, true);
+                var invalid_round = ["准备阶段", "分发身份", "等待上帝指令"];
+                 if (!(invalid_round.includes(current_stage))) {
+                    updateRound(api_base, current_stage, 1);
                     $("#vote-info-head").text("开启");
                 }
             })
 
             $("#end-vote-button").click(function(){
                 var current_stage = $( "#round-select option:selected" ).val();
-                let invalid_round = ["准备阶段", "分发身份", "等待上帝指令"]
-                if (!(current_stage in invalid_round)) {
-                    updateRound(api_base, current_stage, false);
+                var invalid_round = ["准备阶段", "分发身份", "等待上帝指令"];
+                if (!(invalid_round.includes(current_stage))) {
+                    updateRound(api_base, current_stage, 0);
                     $("#vote-info-head").text("关闭");
                 }
             })
@@ -107,7 +107,8 @@
                 setInterval(function() {
                         hostFetchSeats(api_base,
                             {{ current_user.id }}
-                        )
+                        );
+                        fetchRound(api_base, {{ current_user.id }});
                     }, 1000
                 );
             });
@@ -123,6 +124,7 @@
                             {{ current_user.id }}
                         );
                         fetchCharacter(api_base);
+                        fetchRound(api_base, {{ current_user.id }});
                     }, 1000
                 );
             });
@@ -137,6 +139,7 @@
                 success: function(response) {
                     if (response.round_name) {
                         $("#round-info-head").text(response.round_name);
+                        console.log(response)
                         {% if not current_user.is_host(room.name) %}
                         if (response.vote) {
                             $("#vote-info-head").text("可以投票");
@@ -150,13 +153,6 @@
                 }
             })
         }
-        var api_base = "/room/" + {{ room.name }} + "/" + {{ current_user.id }};
-        $(document).ready(function() {
-            setInterval(function() {
-                    fetchRound(api_base, {{ current_user.id }})
-                }, 1000
-            );
-        });
     </script>
     
     
