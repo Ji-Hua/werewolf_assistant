@@ -4,17 +4,15 @@
     <h1>游戏 {{ room.name }}</h1>
     <h4>当前游戏设置为 <span>{{ room.game.template }}</span></h4>
     <h4>当前游戏阶段为 <span id='round-info-head'></span></h4>
+    <h4>当前投票阶段为 <span id='vote-info-head'></span></h4>
     {% if current_user.is_host(room.name) %}
         <h3>你为本游戏的上帝</h3>
-        <div id='pregame-action-div'>
-            <input id="assign-characters-button" name="submit" type="submit" value="分发身份">
-            <input id="start-game-button" name="submit" type="submit" value="进入游戏"><br>
-        </div>
-        <br>
-        <div id='ingame-action-div' hidden>
+        <div id='ingame-action-div'>
             <div id='round-info-div'>
                 <label for="round">选择当前轮次</label><br>
                 <select id="round-select" name="round">
+                    <option value="准备阶段">准备阶段</option>
+                    <option value="分发身份">分发身份</option>
                     <option value="警长竞选">警长竞选</option>
                     <option value="第1天">第1天</option>
                     <option value="第2天">第2天</option>
@@ -25,13 +23,9 @@
                 <input id="round-button" name="submit" type="submit" value="确认阶段"><br>
             </div>
             <br>
-            <select id='sheriff-select'></select>
-            <input id="sheriff-button" name="submit" type="submit" value="授予警徽">
-            <br>
             <div id='vote-buttons-div'>
                 <input id="start-vote-button" name="submit" type="submit" value="开始投票">
                 <input id="end-vote-button" name="submit" type="submit" value="结束投票">
-                <input id="view-vote-button" name="submit" type="submit" value="查看投票">
             </div>
             <br>
         </div>
@@ -39,26 +33,44 @@
             import { updateRound, assignCharacters } from '{{ url_for('static', filename='js/host.js') }}';
             var api_base = "/room/" + {{ room.name }} + "/" + {{ current_user.id }};
 
-            $("#assign-characters-button").click(function() {
-                updateRound(api_base, "分发身份");
-                assignCharacters(api_base);
-                fetchRound(api_base)
-            });
-
-            $("#start-game-button").click(function() {
-                updateRound(api_base, "等待上帝指令");
-                $('#ingame-action-div').show();
-                $('#pregame-action-div').hide();
-                fetchRound(api_base);
-            });
             $("#round-button").click(function(){
                 var current_stage = $( "#round-select option:selected" ).val();
                 updateRound(api_base, current_stage);
+                if (current_stage == "分发身份") {
+                    assignCharacters(api_base);
+                }
                 fetchRound(api_base);
             })
+
+            $("#start-vote-button").click(function(){
+                var current_stage = $( "#round-select option:selected" ).val();
+                let invalid_round = ["准备阶段", "分发身份", "等待上帝指令"]
+                if (!(current_stage in invalid_round)) {
+                    updateRound(api_base, current_stage, true);
+                    $("#round-info-head").text("开启");
+                }
+            })
+
+            $("#end-vote-button").click(function(){
+                var current_stage = $( "#round-select option:selected" ).val();
+                let invalid_round = ["准备阶段", "分发身份", "等待上帝指令"]
+                if (!(current_stage in invalid_round)) {
+                    updateRound(api_base, current_stage, false);
+                    $("#round-info-head").text("关闭");
+                }
+            })
+
         </script>
+    {% else %}
+        <div id='player-character-div'>
+            <h4>身份</h4>
+            <img id="player-character-img" width=128 height=128>
+            <p id="player-character-text"></p>
+        </div>
+        <br>
     {% endif %}
-    <h3>角色状态<h3>
+    <p>投票轮次: <span id='vote-stage-span'></span></p>
+    <p>得票最多: <span id='vote-max-span'></span></p>
     <div id='player-status'>
         <table id='player-status-table'>
             <thead>
@@ -102,38 +114,15 @@
         </script>
     {% else %}
         <script type="module">
-
-            $("#vote-button").click(function(){
-                var data = {
-                    vote_for: $( "#vote-select option:selected" ).val(),
-                    player_id: {{ current_user.current_role(room.name).id }},
-                    round: $( "#vote-label" ).text()
-                };
-                $.ajax({
-                    type: "POST",
-                    url: vote_api_url,
-                    data: data,
-                    success: function(response) {
-                        if (response.vote == 0) {
-                            alert("弃票");
-                        } else if (response.vote == -1) {
-                            alert("本轮无法投票")
-                        } else {
-                            alert("你投票给" + response.vote + "号玩家");
-                        }
-                        
-                    }
-                })
-            })
-
-            import { playerFetchSeats } from '{{ url_for('static', filename='js/player.js') }}';
+            import { playerFetchSeats, fetchCharacter } from '{{ url_for('static', filename='js/player.js') }}';
             var api_base = "/room/" + {{ room.name }} + "/" + {{ current_user.id }};
 
             $(document).ready(function() {
                 setInterval(function() {
                         playerFetchSeats(api_base,
                             {{ current_user.id }}
-                        )
+                        );
+                        fetchCharacter(api_base);
                     }, 1000
                 );
             });

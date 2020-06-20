@@ -1,4 +1,8 @@
+import json
+
 from flask_restful import Resource, reqparse
+from flask import url_for, make_response
+
 from app import db
 from app.models import User, Vote, Game, Room, Player
 from app.tools import assign_character, MAX_PLAYERS
@@ -32,7 +36,6 @@ class Seat(Resource):
             parser.add_argument('seat', type=int, help='Seat taken by user')
             args = parser.parse_args()
             seat = args['seat']
-            print(seat)
             if (player.seat is None) or (player.seat == 0):
                 if seat == 0:
                     pass
@@ -67,7 +70,12 @@ class Character(Resource):
         room = Room.query.filter_by(name=room_name).first()
         if room.has_user(user.id) and not user.is_host(room.name):
             player = user.current_role(room.name)
-        return {'character': player.character}
+            character = player.character
+            if character:
+                data = {'character': character}
+            else:
+                data = {'character': '等待分发'}
+        return data
     
     
     def post(self, room_name, user_id):
@@ -146,3 +154,52 @@ class Votes(Resource):
                 return {"vote": -1}
         else:
                 return {"vote": -1}
+    
+    def get(self, room_name, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        room = Room.query.filter_by(name=room_name).first()
+        if room.has_user(user.id):
+            vote_stage = room.game.vote_stage
+            results = room.view_vote_results(vote_stage)
+            results = sorted(results, key=lambda x: x['vote_from'])
+            counter = {}
+            for row in results:
+                value = row['vote_for']
+                if value > 0 and value < 12:
+                    count = counter.get(value, 0.0)
+                    if room.player_at(row['vote_from']).is_sheriff:
+                        counter[value] = count + 1.5
+                    else:
+                        counter[value] = count + 1
+            if counter:
+                max_vote = max(list(counter.values()))
+                most_voted = sorted([k for k, v in counter.items() if v == max_vote])
+            else:
+                most_voted = []
+            return {
+                'vote_stage': vote_stage,
+                'results': results,
+                'most_voted': most_voted}
+
+
+class Kill(Resource):
+    def post(self, room_name, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        room = Room.query.filter_by(name=room_name).first()
+        if room.has_user(user.id) and user.is_host(room.name):
+            parser = reqparse.RequestParser()
+            parser.add_argument('seat', type=int)
+            args = parser.parse_args()
+            room.kill(args['seat'])
+        return {'death': args['seat']}
+
+class Sheriff(Resource):
+    def post(self, room_name, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        room = Room.query.filter_by(name=room_name).first()
+        if room.has_user(user.id) and user.is_host(room.name):
+            parser = reqparse.RequestParser()
+            parser.add_argument('seat', type=int)
+            args = parser.parse_args()
+            room.set_sheriff(args['seat'])
+        return {'death': args['seat']}

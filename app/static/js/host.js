@@ -191,7 +191,7 @@ export function updateRound(url_base, round_name, vote) {
 
 export function assignCharacters(url_base) {
     var data = {
-        assign_characters: true
+      assign_characters: true
     };
     console.log(data);
     $.ajax({
@@ -206,71 +206,137 @@ export function assignCharacters(url_base) {
     })
 }
 
-export function hostFetchSeats(url_base, user_id){
-    $.ajax({
-        url: url_base + "/seats",
+export function hostFetchSeats(url_base, user_id) {
+  var user_seat = 0;
+  $.ajax({
+    url: url_base + "/seat",
+    type: 'GET',
+    success: function(response){
+      user_seat = response.seat;
+    }
+  });
+
+  $.ajax({
+    url: url_base + "/seats",
+    type: 'GET',
+    success: function(response) {
+      var data = response.results;
+      $.ajax({
+        url: url_base + "/round",
         type: 'GET',
         success: function(response){
-            let survivals = [];
-            var data = response.results;
-            var current_stage = null;
+          let survivals = [];
+          var current_stage = response.round_name;
+          fetchVoteResult(url_base);
 
-            $.ajax({
-                url: url_base + "/round",
-                type: 'GET',
-                success: function(response){
-                    current_stage = response.round;
-                }
-            });
+          for(var i = 0; i < data.length; i++) {
+            var row = data[i];
+            var seat = row.seat;
 
-            for(var i = 0; i < data.length; i++) {
-                var row = data[i];
-                var seat = row.seat;
-                $("#player-status-table-name-" + seat).text(row.name);
-                $("#player-status-table-character-" + seat).text(row.character);
-                $("#player-status-table-death-" + seat).text(row.death);
-                if (row.death == "存活") {
-                    survivals.push(seat);
-                    var action = "<input type='submit' id='player-action-button-" + seat + "'>"
-                    $("#player-status-table-action-" + seat).html(action);
-                    if (current_stage == "警长竞选") {
-                        if (row.in_campaign) {
-                          var sheriff_value = "警上";
-                        } else {
-                          var sheriff_value = (row.campaigned) ? "退水" : "警下" 
-                        }
-                      } else {
-                        var action_value = "死亡";
-                        var action_class = "action-kill";
-                        var sheriff_value = (row.is_sheriff) ? '👮' : ''
-                    }
-                    $("#player-action-button-" + seat).attr('value', action_value).attr('data-seat', seat).attr('class', action_class);
-                    $("#player-status-table-sheriff-" + seat).text(sheriff_value);
-                    if (sheriff_value == "退水") {
-                        $("#player-action-button-" + seat).hide()
-                    }
-                $(".action-kill").click(function(){
-                    var data = {
-                        seat: $(this).data('seat'),
-                    };
-                    $.ajax({
-                        type: "POST",
-                        url: url_base + '/kill',
-                        data: data,
-                        success: function(response) {
-                            if (response.campaign) {
-                                console.log('死亡')
-                            }
-                        }
-                    })
-                })
+            // refresh the table
+            $("#player-status-table-action-" + seat).html('');
+            $("#player-status-table-name-" + seat).text('');
+            $("#player-status-table-character-" + seat).text('');
+            $("#player-status-table-death-" + seat).text('');
+            $("#player-status-table-sheriff-" + seat).text('');
+
+            // write new values
+            $("#player-status-table-name-" + seat).text(row.name);
+            $("#player-status-table-character-" + seat).text(row.character);
+            $("#player-status-table-death-" + seat).text(row.death);
+            if (row.death == "存活") {
+              survivals.push(seat);
+              var action_death = "<input type='submit' id='player-action-button-" + seat + "-death' value='死亡' class='action-kill' data-seat=" + seat +">";
+              var action_sheriff = "<input type='submit' id='player-action-button-" + seat + "-death' value='警徽' class='action-badge' data-seat=" + seat +">";
+              var action = action_death + action_sheriff;
+              if (current_stage == "警长竞选") {
+                if (row.in_campaign) {
+                  action += "<input type='submit' id='player-action-button-" + seat + "-quit'>"
+                  $("#player-status-table-action-" + seat).html(action);
+                  var action_value = "退选";
+                  var action_class = "action-quit";
+                  var sheriff_value = "警上";
+                  $("#player-action-button-" + seat + "-quit")
+                    .attr('value', action_value)
+                    .attr('data-seat', seat)
+                    .attr('class', action_class);
+                } else {
+                  action += "<input type='submit' id='player-action-button-" + seat + "-campaign'>"
+                  $("#player-status-table-action-" + seat).html(action);
+                  var action_value = "竞选";
+                  var action_class = "action-campaign";
+                  var sheriff_value = (row.campaigned) ? "退水" : "警下";
+                  $("#player-action-button-" + seat + "-campaign")
+                    .attr('value', action_value)
+                    .attr('data-seat', seat)
+                    .attr('class', action_class);
                 }
+              } else {
+                $("#player-status-table-action-" + seat).html(action);
+                var sheriff_value = (row.is_sheriff) ? '👮' : '';
+              }
+              $("#player-status-table-sheriff-" + seat).text(sheriff_value);
             }
-            var sheriffOptionsAsString = "<option value='0'>销毁</option>";
-            for(var i = 0; i < survivals.length; i++) {
-                sheriffOptionsAsString += "<option value='" +  survivals[i] + "'>" +  survivals[i] + "</option>";
-            };
-            $("#sheriff-select").find('option').remove().end().append($(sheriffOptionsAsString));
+
+            $(".action-kill").click(function(){
+                var seat = $(this).data('seat');
+                var data = {
+                  seat: seat
+                };
+                $.ajax({
+                  type: "POST",
+                  url: url_base + '/kill',
+                  data: data,
+                  success: function(response) {
+                    if (response.death == seat) {
+                        console.log('死亡')
+                    }
+                  }
+                })
+            })
+
+            $(".action-badge").click(function(){
+              var seat = $(this).data('seat');
+              var data = {
+                seat: seat
+              };
+              $.ajax({
+                type: "POST",
+                url: url_base + '/sheriff',
+                data: data,
+                success: function(response) {
+                  if (response.death == seat) {
+                      console.log('警徽')
+                  }
+                }
+              })
+          })
+          }
+
         }
-    });
+      });
+
+      
+    }
+  })
 }
+
+
+export function fetchVoteResult(url_base) {
+    $.ajax({
+      type: "GET",
+      url: url_base + "/vote",
+      success: function(response) {
+          $("#vote-stage-span").text(response.vote_stage);
+          $("#vote-max-span").text(response.most_voted);
+          for (var i = 0; i < response.results.length; i++) {
+            var row = response.results[i];
+            var vote_for = row.vote_for;
+            if (vote_for == 0) {
+              vote_for = "未投票"
+            }
+            $("#player-status-table-votefor-" + row.vote_from).text(vote_for);
+          }
+      }
+    })
+  }

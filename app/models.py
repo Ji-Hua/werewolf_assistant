@@ -149,6 +149,7 @@ class Room(db.Model):
             for p in self.survivals:
                 p.capable_for_vote = True
                 p.is_candidate = True
+        self.game.vote_stage = self.round
         db.session.commit()
 
     def disable_votes(self):
@@ -176,7 +177,7 @@ class Room(db.Model):
         return results
 
     def player_at(self, seat):
-        for p in self.survivals:
+        for p in self.seated_players:
             if p.seat == seat:
                 return p
         else:
@@ -292,6 +293,7 @@ class Game(db.Model):
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     template = db.Column(db.String(120), index=True, nullable=False)
     current_round = db.Column(db.String(120), default='准备阶段')
+    vote_stage = db.Column(db.String(120))
     is_active = db.Column(db.Boolean, default=True)
     start_time = db.Column(db.DateTime, index=True, default=datetime.now)
     finish_time = db.Column(db.DateTime, index=True)
