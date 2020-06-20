@@ -35,7 +35,7 @@
 
             $("#round-button").click(function(){
                 var current_stage = $( "#round-select option:selected" ).val();
-                updateRound(api_base, current_stage);
+                updateRound(api_base, current_stage, false);
                 if (current_stage == "分发身份") {
                     assignCharacters(api_base);
                 }
@@ -47,7 +47,7 @@
                 let invalid_round = ["准备阶段", "分发身份", "等待上帝指令"]
                 if (!(current_stage in invalid_round)) {
                     updateRound(api_base, current_stage, true);
-                    $("#round-info-head").text("开启");
+                    $("#vote-info-head").text("开启");
                 }
             })
 
@@ -56,7 +56,7 @@
                 let invalid_round = ["准备阶段", "分发身份", "等待上帝指令"]
                 if (!(current_stage in invalid_round)) {
                     updateRound(api_base, current_stage, false);
-                    $("#round-info-head").text("关闭");
+                    $("#vote-info-head").text("关闭");
                 }
             })
 
@@ -136,7 +136,14 @@
                 url: url_base + "/round",
                 success: function(response) {
                     if (response.round_name) {
-                        $("#round-info-head").text(response.round_name)
+                        $("#round-info-head").text(response.round_name);
+                        {% if not current_user.is_host(room.name) %}
+                        if (response.vote) {
+                            $("#vote-info-head").text("可以投票");
+                        } else {
+                            $("#vote-info-head").text("禁止投票");
+                        }
+                        {% endif %}
                     } else {
                         console.log('获取回合失败')
                     }

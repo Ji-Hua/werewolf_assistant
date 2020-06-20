@@ -7,7 +7,7 @@ from app.forms import (LoginForm, RegistrationForm, CreateGameForm,
     GameRoundForm, SeatForm,TemplateForm)
 from app.models import User, Vote, Game, Room, Player
 from app.tools import random_with_n_digits, assign_character
-from app.apis import Table, Seat, Character, Round, Votes, Kill, Sheriff
+from app.apis import Table, Seat, Character, Round, Votes, Kill, Sheriff, Campaign
 
 
 
@@ -116,7 +116,7 @@ api.add_resource(Character, '/room/<room_name>/<user_id>/character')
 api.add_resource(Votes, '/room/<room_name>/<user_id>/vote')
 api.add_resource(Kill, '/room/<room_name>/<user_id>/kill')
 api.add_resource(Sheriff, '/room/<room_name>/<user_id>/sheriff')
-
+api.add_resource(Campaign, '/room/<room_name>/<user_id>/campaign')
 
 @app.route('/static/character_logo/<filename>')
 def send_image(filename):
@@ -136,24 +136,12 @@ def character_image(room_name, user_id):
         return send_image(f"{character}.png")
 
     
-@app.route('/room/<room_name>/candidates', methods=['GET'])
-@login_required
-def candidates(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    if room.round == "警长竞选":
-        candidates = [p.seat for p in room.survivals if p.in_sheriff_campaign and p.is_candidate]
-    else:
-        candidates = [p.seat for p in room.survivals if p.is_candidate]
-    return jsonify({'candidates': candidates})
-
-@app.route('/room/<room_name>/campaign', methods=['POST'])
-@login_required
-def campaign(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    seat = int(request.form['seat'])
-    if request.form['campaign'] == 'true':
-        room.campaign(seat)
-        return jsonify({'campaign': True})
-    else:
-        room.quit_campaign(seat)
-        return jsonify({'campaign': False})
+# @app.route('/room/<room_name>/candidates', methods=['GET'])
+# @login_required
+# def candidates(room_name):
+#     room = Room.query.filter_by(name=room_name).first()
+#     if room.round == "警长竞选":
+#         candidates = [p.seat for p in room.survivals if p.in_sheriff_campaign and p.is_candidate]
+#     else:
+#         candidates = [p.seat for p in room.survivals if p.is_candidate]
+#     return jsonify({'candidates': candidates})

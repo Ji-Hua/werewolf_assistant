@@ -1,39 +1,3 @@
-// var status_api_url = "/room/" + {{ room.name }} + "/game_status";
-// var candidates_api_url = "/room/" + {{ room.name }} + "/candidates";
-// var vote_api_url = "/room/" + {{ room.name }} + "/vote";
-// var prev_status = "";
-// var prev_stage = "";
-// function fetchstatus(){
-//     $.ajax({
-//         url: status_api_url,
-//         type: 'get',
-//         success: function(response){
-//             console.log(response.status);
-//             $("#vote-label").text( response.status);
-//             if (response.status != prev_status) {
-//                 prev_status = response.status;
-//                 if (response.status != "等待上帝指令") {
-//                     prev_stage = response.status;
-//                     console.log(prev_stage);
-//                     $("#vote-stage").text('投票已开启');
-//                     $.getJSON(candidates_api_url, function(data) {
-//                         var optionsAsString = "<option value='0'>弃权</option>";
-//                         for(var i = 0; i < data.candidates.length; i++) {
-//                             optionsAsString += "<option value='" +  data.candidates[i] + "'>" +  data.candidates[i] + "</option>";
-//                         };
-//                         $("#vote-select").find('option').remove().end().append($(optionsAsString));
-//                     });
-//                 } else {
-//                     $("#vote-stage").text('投票已关闭');
-//                     $("#vote-select").find('option').remove().end();
-//                     viewResults();
-//                 }
-//             } 
-//         }
-//     });
-// }
-
-
 export function playerFetchSeats(url_base, user_id) {
   var user_seat = 0;
   $.ajax({
@@ -93,6 +57,7 @@ export function playerFetchSeats(url_base, user_id) {
               if (row.death == "存活") {
                 survivals.push(seat);
                 if (seat == user_seat) {
+                  // console.log(row)
                   var action = "<input type='submit' id='player-action-button-" + seat + "'>"
                   $("#player-status-table-action-" + seat).html(action);
                   if (row.in_campaign) {
@@ -142,7 +107,7 @@ export function playerFetchSeats(url_base, user_id) {
           $(".action-campaign").click(function() {
             var data = {
                 seat: $(this).data('seat'),
-                campaign: true,
+                campaign: 1,
             };
             $.ajax({
               type: "POST",
@@ -162,13 +127,15 @@ export function playerFetchSeats(url_base, user_id) {
           $(".action-quit").click(function() {
             var data = {
               seat: $(this).data('seat'),
-              campaign: false,
+              campaign: 0,
             };
+            console.log(data);
             $.ajax({
               type: "POST",
               url: url_base + "/campaign",
               data: data,
               success: function(response) {
+                console.log(response)
                 if (response.campaign) {
                   console.log('上警成功')
                 } else {

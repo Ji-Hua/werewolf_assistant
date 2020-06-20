@@ -134,7 +134,6 @@ class Votes(Resource):
             parser.add_argument('round_name', type=str)
             args = parser.parse_args()
             player = user.current_role(room.name)
-            print(player.capable_for_vote)
             if player.capable_for_vote:
                 game = Room.query.filter_by(name=room.name).first().game
                 prev_votes = Vote.query.filter_by(
@@ -203,3 +202,21 @@ class Sheriff(Resource):
             args = parser.parse_args()
             room.set_sheriff(args['seat'])
         return {'death': args['seat']}
+
+class Campaign(Resource):
+    def post(self, room_name, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        room = Room.query.filter_by(name=room_name).first()
+        if room.has_user(user.id):
+            parser = reqparse.RequestParser()
+            parser.add_argument('seat', type=int)
+            parser.add_argument('campaign', type=int)
+            args = parser.parse_args()
+            print(args)
+            if args['campaign'] == 1:
+                room.campaign(args['seat'])
+                return {'campaign': True}
+            else:
+                room.quit_campaign(args['seat'])
+                return {'campaign': False}
+
