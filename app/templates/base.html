@@ -8,9 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
 
     {% if title %}
-    <title>{{ title }} - 烂柯桌游社</title>
+    <title>{{ title }} - 烂柯游艺社</title>
     {% else %}
-    <title>烂柯桌游社</title>
+    <title>烂柯游艺社</title>
     {% endif %}
 
 </head>
@@ -20,12 +20,12 @@
         <img class="logo" src="{{url_for('static', filename='logo.png')}}">
         <div class="banner">
             <p>
-                <span class="chinesecursive bannertext">烂柯桌游社<br></span>
+                <span class="chinesecursive bannertext">烂柯游艺社<br></span>
                 <span class="bannertext">Harvard Board Games Club</span>
             </p>
         </div>
         <hr>
-        烂柯桌游社:
+        烂柯游艺社:
         <a href="{{ url_for('index') }}">首页</a>
         {% if current_user.is_anonymous %}
         <a href="{{ url_for('login') }}">登录</a>
