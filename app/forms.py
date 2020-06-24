@@ -57,5 +57,16 @@ class GameRoundForm(FlaskForm):
         ('第5天', '第5天'),
     ]
     round = SelectField('选择当前轮次', choices=round_opts, validate_choice=False)
-    
 
+
+class ResetPasswordRequestForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('重置密码')
+
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('密码', validators=[DataRequired()])
+    password2 = PasswordField(
+        '重复密码', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('密码重置')
+    
