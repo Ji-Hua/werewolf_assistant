@@ -51,16 +51,25 @@ export function playerFetchSeats(url_base, user_id) {
           for(var i = 0; i < data.length; i++) {
             var row = data[i];
             var seat = row.seat;
-
+            
             // refresh the table
             $("#player-status-table-action-" + seat).html('');
             $("#player-status-table-name-" + seat).text('');
             $("#player-status-table-character-" + seat).text('');
             $("#player-status-table-death-" + seat).text('');
             $("#player-status-table-sheriff-" + seat).text('');
-
+            
             // write new values
-            $("#player-status-table-name-" + seat).text(row.name);
+            var player_name = row.name;
+            if (seat == user_seat) {
+              $('#player-status-table-row-' + seat).css("font-weight", "600");
+              player_name += " (自己)"
+            }
+
+            if ((row.death != "存活") && (row.name != undefined)) {
+              $('#player-status-table-row-' + seat).css("background-color", );
+            }
+            $("#player-status-table-name-" + seat).text(player_name);
             $("#player-status-table-character-" + seat).text(row.character);
             $("#player-status-table-death-" + seat).text(row.death);
 
@@ -70,7 +79,7 @@ export function playerFetchSeats(url_base, user_id) {
                 var action = "<input type='submit' id='player-action-button-" + seat + "-sit' value='坐下' class='action-sit' data-seat=" + seat +">"
                 $("#player-status-table-action-" + seat).html(action);
               } else {
-                if (seat == user_seat)  {
+                if (seat == user_seat) {
                   var action = "<input type='submit' id='player-action-button-" + seat + "-sit' value='站起' class='action-stand' data-seat=" + seat +">"
                   $("#player-status-table-action-" + seat).html(action);
                 } else {
