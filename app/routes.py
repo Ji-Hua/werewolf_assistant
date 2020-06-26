@@ -5,8 +5,7 @@ from werkzeug.urls import url_parse
 from app import app, db, api
 from app.email import send_password_reset_email
 from app.forms import (LoginForm, RegistrationForm, CreateGameForm, 
-    GameRoundForm, SeatForm,TemplateForm, ResetPasswordRequestForm,
-    ResetPasswordForm)
+    SeatForm,TemplateForm, ResetPasswordRequestForm, ResetPasswordForm)
 from app.models import User, Vote, Game, Room, Player
 from app.tools import random_with_n_digits, assign_character
 from app.apis import Table, Seat, Character, Round, Votes, Kill, Sheriff, Campaign
@@ -25,9 +24,12 @@ def index():
             if form.enter_game.data:
                 # TODO: should validate room_name here
                 room = Room.query.filter_by(name=form.room_name.data).first()
-                player = Player(user_id=current_user.id, room_id=room.id, is_host=False)
-                db.session.add(player)
-                db.session.commit()
+                if room.has_user(current_user.id):
+                    pass
+                else:
+                    player = Player(user_id=current_user.id, room_id=room.id, is_host=False)
+                    db.session.add(player)
+                    db.session.commit()
                 next_page = url_for('room', room_name=room.name)
             return redirect(next_page)
         
@@ -129,11 +131,7 @@ def setup():
 def room(room_name):
     if current_user.is_authenticated:
         room = Room.query.filter_by(name=room_name).first()
-        if current_user.is_host(room.name):
-            form = GameRoundForm()
-            return render_template('room.html', title='游戏进行中', room=room, form=form)
-        else:
-            return render_template('room.html', title='游戏进行中', room=room)
+        return render_template('room.html', title='游戏进行中', room=room)
     else:
         return redirect(url_for('login'))
 

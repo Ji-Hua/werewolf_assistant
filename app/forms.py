@@ -46,19 +46,6 @@ class SeatForm(FlaskForm):
     submit = SubmitField('坐下')
 
 
-class GameRoundForm(FlaskForm):
-    
-    round_opts = [
-        ('警长竞选', '警长竞选'),
-        ('第1天', '第1天'),
-        ('第2天', '第2天'),
-        ('第3天', '第3天'),
-        ('第4天', '第4天'),
-        ('第5天', '第5天'),
-    ]
-    round = SelectField('选择当前轮次', choices=round_opts, validate_choice=False)
-
-
 class ResetPasswordRequestForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('重置密码')
