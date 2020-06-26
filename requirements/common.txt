@@ -2,10 +2,7 @@ alembic==1.4.2
 aniso8601==8.0.0
 astroid==2.4.0
 attrs==19.3.0
-<<<<<<< HEAD
-=======
 blinker==1.4
->>>>>>> f953d680371d5321483cbd1546e8d30eca8e9f56
 click==7.1.2
 coverage==5.1
 dnspython==1.16.0
