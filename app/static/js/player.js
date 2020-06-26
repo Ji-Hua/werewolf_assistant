@@ -64,10 +64,14 @@ export function playerFetchSeats(url_base, user_id) {
             if (seat == user_seat) {
               $('#player-status-table-row-' + seat).css("font-weight", "600");
               player_name += " (自己)"
+            } else {
+              $('#player-status-table-row-' + seat).css("font-weight", "400");
             }
 
             if ((row.death != "存活") && (row.name != undefined)) {
               $('#player-status-table-row-' + seat).css("background-color", "#545454");
+            } else {
+              $('#player-status-table-row-' + seat).css("background-color", "white");
             }
             $("#player-status-table-name-" + seat).text(player_name);
             $("#player-status-table-character-" + seat).text(row.character);
@@ -93,7 +97,7 @@ export function playerFetchSeats(url_base, user_id) {
                 if (row.in_campaign) {
                   var sheriff_value = "警上";
                   if (seat == user_seat) {
-                    action += "<input type='submit' id='player-action-button-" + seat + "-quit'>"
+                    var action = "<input type='submit' id='player-action-button-" + seat + "-quit'>"
                     $("#player-status-table-action-" + seat).html(action);
                     var action_value = "退选";
                     var action_class = "action-quit";
@@ -103,7 +107,7 @@ export function playerFetchSeats(url_base, user_id) {
                       .attr('class', action_class);
                   }
                 } else {
-                  var sheriff_value = (row.campaigned) ? "退水" : "警下";
+                  var sheriff_value = (row.campaigned) ? "退水" : "-";
                   if (seat == user_seat) {
                     var action = "<input type='submit' id='player-action-button-" + seat + "-campaign'>"
                     $("#player-status-table-action-" + seat).html(action);
@@ -117,7 +121,7 @@ export function playerFetchSeats(url_base, user_id) {
                 }
                 $("#player-status-table-sheriff-" + seat).text(sheriff_value);
                 if (sheriff_value == "退水") {
-                  $("#player-action-button-" + seat).hide()
+                  $("#player-action-button-" + seat + "-campaign").hide()
                 };
               }
             } else if(current_stage == "分发身份") {
