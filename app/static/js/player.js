@@ -229,20 +229,23 @@ export function playerFetchSeats(url_base, user_id) {
 }
 
 
-export function fetchCharacter(url_base) {
+export function fetchCharacter(url_base, old_name) {
   $.ajax({
       type: "GET",
       url: url_base + "/character",
       success: function(response) {
           if (response) {
-            var outside;
-          fetch(url_base + "/character_image")
-            .then(response => response.blob())
-            .then(images => {
-                outside = URL.createObjectURL(images)
-                $("#player-character-img").attr('src', outside);
-            })
+            if (response.character != old_name) {
+              var img_src;
+              fetch(url_base + "/character_image")
+              .then(response => response.blob())
+              .then(images => {
+                  img_src = URL.createObjectURL(images)
+                  $("#player-character-img").attr('src', img_src);
+              });
             $("#player-character-text").text(response.character);
+            }
+            
           }
       }
   })

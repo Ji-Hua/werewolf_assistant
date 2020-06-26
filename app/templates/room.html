@@ -123,7 +123,8 @@
                         playerFetchSeats(api_base,
                             {{ current_user.id }}
                         );
-                        fetchCharacter(api_base);
+                        var old_character = $("#player-character-text").text();
+                        fetchCharacter(api_base, old_character);
                         fetchRound(api_base, {{ current_user.id }});
                     }, 1000
                 );
