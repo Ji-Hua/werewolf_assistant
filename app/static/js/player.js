@@ -67,7 +67,7 @@ export function playerFetchSeats(url_base, user_id) {
             }
 
             if ((row.death != "存活") && (row.name != undefined)) {
-              $('#player-status-table-row-' + seat).css("background-color", );
+              $('#player-status-table-row-' + seat).css("background-color", "#545454");
             }
             $("#player-status-table-name-" + seat).text(player_name);
             $("#player-status-table-character-" + seat).text(row.character);

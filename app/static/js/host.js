@@ -63,6 +63,10 @@ export function hostFetchSeats(url_base, user_id) {
             var row = data[i];
             var seat = row.seat;
 
+            if ((row.death != "存活") && (row.name != undefined)) {
+              $('#player-status-table-row-' + seat).css("background-color", "#545454");
+            }
+
             // refresh the table
             $("#player-status-table-action-" + seat).html('');
             $("#player-status-table-name-" + seat).text('');

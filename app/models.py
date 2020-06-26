@@ -291,7 +291,7 @@ class Player(db.Model):
             "avatar": self.user.avatar(),
             "name": self.name,
             "character": (self.character if self.character else '-'),
-            "death": (self.death_method if self.is_dead else "存活"),
+            "death": ((self.death_method or "死亡") if self.is_dead else "存活"),
             "is_sheriff": self.is_sheriff,
             "in_campaign": self.in_sheriff_campaign,
             "campaigned": self.sheriff_campaigned
