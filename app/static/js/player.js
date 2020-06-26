@@ -1,4 +1,11 @@
 export function playerFetchSeats(url_base, user_id) {
+  // unbind functions
+  $(".action-vote").off("click");
+  $(".action-stand").off("click");
+  $(".action-sit").off("click");
+  $(".action-campaign").off("click");
+  $(".action-quit").off("click");
+
   var user_seat = 0;
   $.ajax({
     url: url_base + "/seat",
@@ -20,8 +27,26 @@ export function playerFetchSeats(url_base, user_id) {
           let survivals = [];
           var current_stage = response.round_name;
 
+          if (response.in_vote) {
+            if(response.capabale_for_vote) {
+              for(var i = 0; i < data.length; i++) {
+                var seat = response.candidates[i];
+                var btn_id = "player-action-button-" + seat + "-vote"
+                if ($("#" + btn_id).length == 0) {
+                  var vote_action = "<input type='submit' id='" + btn_id + "'>"
+                  $("#player-status-table-votefor-" + seat).html(vote_action);
+                  $("#" + btn_id)
+                    .attr('value', "投票")
+                    .attr('data-seat', seat)
+                    .attr('class', "action-vote");
+                }
+              }
+              $(".action-vote").show()
+            }
+          } else {
+            fetchVoteResult(url_base, current_stage);
+          }
           
-          fetchVoteResult(url_base, current_stage);
 
           for(var i = 0; i < data.length; i++) {
             var row = data[i];
@@ -55,32 +80,30 @@ export function playerFetchSeats(url_base, user_id) {
             } else if (current_stage == "警长竞选") {
               if (row.death == "存活") {
                 survivals.push(seat);
+                
                 if (row.in_campaign) {
-                  var action = "<input type='submit' id='player-action-button-" + seat + "-vote' value='投票' class='action-vote' data-seat=" + seat +">";
-                  $("#player-status-table-action-" + seat).html(action);
-                }
-                if (seat == user_seat) {
-                  if (row.in_campaign) {
+                  var sheriff_value = "警上";
+                  if (seat == user_seat) {
                     action += "<input type='submit' id='player-action-button-" + seat + "-quit'>"
                     $("#player-status-table-action-" + seat).html(action);
                     var action_value = "退选";
                     var action_class = "action-quit";
-                    var sheriff_value = "警上";
                     $("#player-action-button-" + seat + "-quit")
                       .attr('value', action_value)
                       .attr('data-seat', seat)
                       .attr('class', action_class);
-                  } else {
+                  }
+                } else {
+                  var sheriff_value = (row.campaigned) ? "退水" : "警下";
+                  if (seat == user_seat) {
                     var action = "<input type='submit' id='player-action-button-" + seat + "-campaign'>"
                     $("#player-status-table-action-" + seat).html(action);
                     var action_value = "竞选";
                     var action_class = "action-campaign";
-                    var sheriff_value = (row.campaigned) ? "退水" : "警下";
                     $("#player-action-button-" + seat + "-campaign")
                       .attr('value', action_value)
                       .attr('data-seat', seat)
                       .attr('class', action_class);
-                    
                   }
                 }
                 $("#player-status-table-sheriff-" + seat).text(sheriff_value);
@@ -91,26 +114,14 @@ export function playerFetchSeats(url_base, user_id) {
             } else if(current_stage == "分发身份") {
               // TODO: add character chage card
               
-            } else if (current_stage == "等待上帝指令") {
-              // should remove this
-              if (row.death == "存活") {
-                survivals.push(seat);
-              }
             } else {
               if (row.death == "存活") {
                 survivals.push(seat);
                 var sheriff_value = (row.is_sheriff) ? '👮' : ''
                 $("#player-status-table-sheriff-" + seat).text(sheriff_value);
-                var action = "<input type='submit' id='player-action-button-" + seat + "'>"
-                $("#player-status-table-action-" + seat).html(action);
-                $("#player-action-button-" + seat)
-                  .attr('value', "投票")
-                  .attr('data-seat', seat)
-                  .attr('class', "action-vote");
               }
-              
-
             }
+
           }
 
           // 警长竞选-上警
@@ -139,13 +150,11 @@ export function playerFetchSeats(url_base, user_id) {
               seat: $(this).data('seat'),
               campaign: 0,
             };
-            console.log(data);
             $.ajax({
               type: "POST",
               url: url_base + "/campaign",
               data: data,
               success: function(response) {
-                console.log(response)
                 if (response.campaign) {
                   console.log('上警成功')
                 } else {
@@ -197,31 +206,26 @@ export function playerFetchSeats(url_base, user_id) {
           // Vote
           $(".action-vote").click(function() {
             var vote_for = $(this).data('seat');
-
+            var data = {
+              vote_for: vote_for,
+              round_name: current_stage
+            };
             $.ajax({
-              type: "GET",
-              url: url_base + "/round",
+              type: "POST",
+              url: url_base + "/vote",
+              data: data,
               success: function(response) {
-                var data = {
-                  vote_for: vote_for,
-                  round_name: response.round_name
-                };
-                console.log(data);
-                $.ajax({
-                  type: "POST",
-                  url: url_base + "/vote",
-                  data: data,
-                  success: function(response) {
-                    if (response.vote_for == vote_for) {
-                      console.log(response)
-                    } else {
-                      alert("当前不可投票")
-                    }
-                  }
-                })
+                console.log(response)
+                if (response.vote == vote_for) {
+                  alert("成功投票给: " + vote_for)
+                  $(".action-vote").hide()
+                } else if(response.vote_for == -1) {
+                  alert("本回合不可投票")
+                }
               }
             })
           });
+
         }
       });
     }

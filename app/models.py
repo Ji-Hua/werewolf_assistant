@@ -153,6 +153,14 @@ class Room(db.Model):
         for player in self.seated_players:
             desc["players"].append(player.description)
         return desc
+    
+    @property
+    def candidates(self):
+        candidates = []
+        for p in self.survivals:
+            if p.is_candidate:
+             candidates.append(p.seat)       
+        return candidates
 
     def enable_votes(self):
         if self.round == "警长竞选":
@@ -166,11 +174,14 @@ class Room(db.Model):
                 p.capable_for_vote = True
                 p.is_candidate = True
         self.game.vote_stage = self.round
+        self.game.in_vote = True
         db.session.commit()
 
     def disable_votes(self):
         for p in self.survivals:
             p.capable_for_vote = False
+            p.is_candidate = False
+        self.game.in_vote = False
         db.session.commit()
 
     def set_round(self, round_name):
@@ -310,6 +321,7 @@ class Game(db.Model):
     template = db.Column(db.String(120), index=True, nullable=False)
     current_round = db.Column(db.String(120), default='准备阶段')
     vote_stage = db.Column(db.String(120))
+    in_vote = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
     start_time = db.Column(db.DateTime, index=True, default=datetime.now)
     finish_time = db.Column(db.DateTime, index=True)

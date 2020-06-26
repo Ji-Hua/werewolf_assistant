@@ -140,12 +140,11 @@
                 success: function(response) {
                     if (response.round_name) {
                         $("#round-info-head").text(response.round_name);
-                        console.log(response)
                         {% if not current_user.is_host(room.name) %}
-                        if (response.vote) {
-                            $("#vote-info-head").text("可以投票");
+                        if (response.in_vote) {
+                            $("#vote-info-head").text("投票进行中");
                         } else {
-                            $("#vote-info-head").text("禁止投票");
+                            $("#vote-info-head").text("投票未开启");
                         }
                         {% endif %}
                     } else {

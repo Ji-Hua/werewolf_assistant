@@ -121,7 +121,9 @@ class Round(Resource):
         if room.has_user(user.id):
             return {
                 'round_name': room.round,
-                'vote': user.current_role(room.name).capable_for_vote
+                'capabale_for_vote': user.current_role(room.name).capable_for_vote,
+                'in_vote': room.game.in_vote,
+                'candidates': room.candidates
             }
 
 class Votes(Resource):

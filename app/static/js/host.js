@@ -108,6 +108,9 @@ export function hostFetchSeats(url_base, user_id) {
               $("#player-status-table-sheriff-" + seat).text(sheriff_value);
             }
 
+            $(".action-kill").off("click");
+            $(".action-badge").off("click");
+
             $(".action-kill").click(function(){
                 var seat = $(this).data('seat');
                 var data = {
