@@ -147,31 +147,3 @@ api.add_resource(Votes, '/room/<room_name>/<user_id>/vote')
 api.add_resource(Kill, '/room/<room_name>/<user_id>/kill')
 api.add_resource(Sheriff, '/room/<room_name>/<user_id>/sheriff')
 api.add_resource(Campaign, '/room/<room_name>/<user_id>/campaign')
-
-@app.route('/static/character_logo/<filename>')
-def send_image(filename):
-    return send_from_directory("static/character_logo", filename)
-
-@app.route('/room/<room_name>/<user_id>/character_image', methods=['GET'])
-def character_image(room_name, user_id):
-    user = User.query.filter_by(id=user_id).first()
-    room = Room.query.filter_by(name=room_name).first()
-    if room.has_user(user.id) and not user.is_host(room.name):
-        player = user.current_role(room.name)
-        if player.character:
-            character = player.character
-        else:
-            character = '等待分发'
-        
-        return send_image(f"{character}.png")
-
-    
-# @app.route('/room/<room_name>/candidates', methods=['GET'])
-# @login_required
-# def candidates(room_name):
-#     room = Room.query.filter_by(name=room_name).first()
-#     if room.round == "警长竞选":
-#         candidates = [p.seat for p in room.survivals if p.in_sheriff_campaign and p.is_candidate]
-#     else:
-#         candidates = [p.seat for p in room.survivals if p.is_candidate]
-#     return jsonify({'candidates': candidates})

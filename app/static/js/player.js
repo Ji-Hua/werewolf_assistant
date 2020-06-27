@@ -253,20 +253,14 @@ export function fetchCharacter(url_base, old_name) {
       success: function(response) {
           if (response) {
             if (response.character != old_name) {
-              var img_src;
-              fetch(url_base + "/character_image")
-              .then(response => response.blob())
-              .then(images => {
-                  img_src = URL.createObjectURL(images)
-                  $("#player-character-img").attr('src', img_src);
-              });
-            $("#player-character-text").text(response.character);
+              $("#player-character-img").attr('src', response.image_url);
+              $("#player-character-text").text(response.character);
             }
-            
           }
       }
   })
 }
+
 
 export function fetchVoteResult(url_base, stage) {
   $.ajax({

@@ -1,4 +1,5 @@
 import json
+from urllib.parse import unquote
 
 from flask_restful import Resource, reqparse
 from flask import url_for, make_response
@@ -70,11 +71,11 @@ class Character(Resource):
         room = Room.query.filter_by(name=room_name).first()
         if room.has_user(user.id) and not user.is_host(room.name):
             player = user.current_role(room.name)
-            character = player.character
-            if character:
-                data = {'character': character}
-            else:
-                data = {'character': '等待分发'}
+            character = player.character or '等待分发'
+            file_name = f"character_logo/{character}.png"
+            url = unquote(url_for('static', filename=file_name))
+            data = {'character': character,
+                    'image_url': url}
         return data
     
     
