@@ -165,23 +165,33 @@ class Votes(Resource):
             results = room.view_vote_results(vote_stage)
             results = sorted(results, key=lambda x: x['vote_from'])
             counter = {}
+            vote_stats = {}
             for row in results:
                 value = row['vote_for']
                 if value > 0 and value < 12:
                     count = counter.get(value, 0.0)
+                    stat = vote_stats.get(value, [])
                     if room.player_at(row['vote_from']).is_sheriff:
                         counter[value] = count + 1.5
+                        stat.append(f"{row['vote_from']}(警长)")
                     else:
+                        stat.append(str(row['vote_from']))
                         counter[value] = count + 1
+                    vote_stats[value] = stat
+            vote_text = "<p>投票结果:</p>"
+            for key, value in vote_stats.items():
+                line = f"<p>{','.join(value)} -> {key} </p>"
+                vote_text += line
             if counter:
                 max_vote = max(list(counter.values()))
                 most_voted = sorted([k for k, v in counter.items() if v == max_vote])
             else:
                 most_voted = []
-            return {
-                'vote_stage': vote_stage,
-                'results': results,
-                'most_voted': most_voted}
+            return {'vote_stage': vote_stage,
+                    'results': results,
+                    'most_voted': most_voted,
+                    'vote_text': unquote(vote_text)
+                }
 
 
 class Kill(Resource):

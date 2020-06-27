@@ -137,7 +137,6 @@ def room(room_name):
 
 
 # APIs
-# TODO: use flask-restful later
 
 api.add_resource(Table, '/room/<room_name>/<user_id>/seats')
 api.add_resource(Seat, '/room/<room_name>/<user_id>/seat')
