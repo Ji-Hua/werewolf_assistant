@@ -274,6 +274,7 @@ export function fetchVoteResult(url_base, stage) {
         $("#vote-stage-span").text(response.vote_stage);
       }
       $("#vote-max-span").text(response.most_voted);
+      $("#vote-text-div").html(response.vote_text);
 
       var invalid_round = ["准备阶段", "分发身份", "等待上帝指令"];
       for (var i = 0; i < response.results.length; i++) {
