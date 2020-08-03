@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>角色介绍</h2>
+
+<br>
+<h3>未知阵营</h3>
+<br>
+<div class="container">
+    <div class="row">
+        {% for c in characters["未知阵营"] %}
+        <a href="{{ 'character_intro/' + c['id'] }}">
+            <div class="col-sm">
+                
+                    <img id="logo-unknown-{{c['id']}}" class="character-img border"
+                    src="{{url_for('static', filename='character_logo/' + c['名字'] + '.png')}}"
+                    width=128 height=128>
+            <p>{{c['名字']}}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+<br>
+<h3>好人阵营</h3>
+<br>
+<div class="container">
+    <div class="row">
+        {% for c in characters["好人阵营"][:6] %}
+        <a href="{{ 'character_intro/' + c['id'] }}">
+            <div class="col-sm">
+                
+                    <img id="logo-unknown-{{c['id']}}" class="character-img border"
+                    src="{{url_for('static', filename='character_logo/' + c['名字'] + '.png')}}"
+                    width=128 height=128>
+            <p>{{c['名字']}}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    <div class="row">
+        {% for c in characters["好人阵营"][6:12] %}
+        <a href="{{ 'character_intro/' + c['id'] }}">
+            <div class="col-sm">
+                
+                    <img id="logo-unknown-{{c['id']}}" class="character-img border"
+                    src="{{url_for('static', filename='character_logo/' + c['名字'] + '.png')}}"
+                    width=128 height=128>
+            <p>{{c['名字']}}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    <div class="row">
+        {% for c in characters["好人阵营"][12:18] %}
+        <a href="{{ 'character_intro/' + c['id'] }}">
+            <div class="col-sm">
+                
+                    <img id="logo-unknown-{{c['id']}}" class="character-img border"
+                    src="{{url_for('static', filename='character_logo/' + c['名字'] + '.png')}}"
+                    width=128 height=128>
+            <p>{{c['名字']}}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    <div class="row">
+        {% for c in characters["好人阵营"][18:] %}
+        <a href="{{ 'character_intro/' + c['id'] }}">
+            <div class="col-sm">
+                
+                    <img id="logo-unknown-{{c['id']}}" class="character-img border"
+                    src="{{url_for('static', filename='character_logo/' + c['名字'] + '.png')}}"
+                    width=128 height=128>
+            <p>{{c['名字']}}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+<br>
+<h3>狼人阵营</h3>
+<br>
+<div class="container">
+    <div class="row">
+        {% for c in characters["狼人阵营"][:6] %}
+        <a href="{{ 'character_intro/' + c['id'] }}">
+            <div class="col-sm">
+                
+                    <img id="logo-unknown-{{c['id']}}" class="character-img border"
+                    src="{{url_for('static', filename='character_logo/' + c['名字'] + '.png')}}"
+                    width=128 height=128>
+            <p>{{c['名字']}}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    <div class="row">
+        {% for c in characters["狼人阵营"][6:12] %}
+        <a href="{{ 'character_intro/' + c['id'] }}">
+            <div class="col-sm">
+                
+                    <img id="logo-unknown-{{c['id']}}" class="character-img border"
+                    src="{{url_for('static', filename='character_logo/' + c['名字'] + '.png')}}"
+                    width=128 height=128>
+            <p>{{c['名字']}}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    <div class="row">
+        {% for c in characters["狼人阵营"][12:18] %}
+        <a href="{{ 'character_intro/' + c['id'] }}">
+            <div class="col-sm">
+                
+                    <img id="logo-unknown-{{c['id']}}" class="character-img border"
+                    src="{{url_for('static', filename='character_logo/' + c['名字'] + '.png')}}"
+                    width=128 height=128>
+            <p>{{c['名字']}}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    <div class="row">
+        {% for c in characters["狼人阵营"][18:] %}
+        <a href="{{ 'character_intro/' + c['id'] }}">
+            <div class="col-sm">
+                
+                    <img id="logo-unknown-{{c['id']}}" class="character-img border"
+                    src="{{url_for('static', filename='character_logo/' + c['名字'] + '.png')}}"
+                    width=128 height=128>
+            <p>{{c['名字']}}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+
+{% endblock %}

@@ -8,7 +8,7 @@ from app.forms import (LoginForm, RegistrationForm, CreateGameForm,
     GameRoundForm, SeatForm,TemplateForm, ResetPasswordRequestForm,
     ResetPasswordForm)
 from app.models import User, Vote, Game, Room, Player
-from app.tools import random_with_N_digits, assign_character
+from app.tools import random_with_N_digits, assign_character, CHARACTER_INTRO
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -101,6 +101,23 @@ def register():
         flash('注册成功')
         return redirect(url_for('login'))
     return render_template('register.html', title='注册', form=form)
+
+@app.route('/characters')
+def characters():
+    return render_template('characters.html', characters=CHARACTER_INTRO)
+
+@app.route('/character_intro/<character_id>', methods=['GET'])
+def character_intro(character_id):
+    data = None
+    cis = []
+    for k in CHARACTER_INTRO:
+        cis.extend(CHARACTER_INTRO[k])
+    for ci in cis:
+        if ci['id'] == character_id:
+            data = ci
+            return render_template('character_intro.html', data=data)
+    else:
+        raise ValueError("No such character")
 
 
 @app.route('/setup', methods=['GET', 'POST'])
