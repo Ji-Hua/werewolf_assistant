@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>角色介绍</h2>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg">
+            <img class="character-img border" id="character-logo"
+            src="{{url_for('static', filename='character_logo/' + data['名字'] + '.png')}}"
+            width=256 height=256>
+        </div>
+    
+    <div class="col-lg">
+        <h4>{{data['名字']}}</h4>
+        <p>
+            {% for s in data['归属'] %}
+            {{s}} 
+            {% endfor %}
+        </p>
+        {% for s in data['技能'] %}
+        <p>【</span>{{s['名称']}}</span>】  {{s['说明']}}</p>
+        {% endfor %}
+        <br>
+        <p></span id='line-note'>{{data['台词']}}</span></p>
+        <br>
+        <p></span id='span-note'>{{data['注释']}}</span></p>
+    </div>
+    </div>
+    
+</div>
+    
+    
+
+{% endblock %}

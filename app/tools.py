@@ -16,6 +16,9 @@ data_path = os.path.join(os.path.dirname(__file__), 'data/')
 with open(os.path.join(data_path, 'game_config.json')) as f:
     GAME_TEMPLATES = json.load(f)
 
+with open(os.path.join(data_path, 'character_intro.json')) as f:
+    CHARACTER_INTRO = json.load(f)    
+
 def build_character_queue(template_name):
     queue = []
     character_dict = GAME_TEMPLATES[template_name]
