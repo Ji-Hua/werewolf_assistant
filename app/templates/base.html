@@ -31,7 +31,7 @@
         <hr>
         烂柯游艺社:
         <a href="{{ url_for('index') }}">首页</a>
-        <a href="{{ url_for('characters') }}">角色</a>
+        <a href="{{ url_for('character_intros') }}">角色</a>
         {% if current_user.is_anonymous %}
         <a href="{{ url_for('login') }}">登录</a>
         <p>新用户？ <a href="{{ url_for('register') }}">点击注册</a></p>

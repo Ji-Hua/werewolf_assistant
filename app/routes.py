@@ -2,13 +2,14 @@ from flask import render_template, flash, redirect, url_for, request, jsonify
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
 
-from app import app, db
+from app import app, db, api
 from app.email import send_password_reset_email
 from app.forms import (LoginForm, RegistrationForm, CreateGameForm, 
     GameRoundForm, SeatForm,TemplateForm, ResetPasswordRequestForm,
     ResetPasswordForm)
 from app.models import User, Vote, Game, Room, Player
-from app.tools import random_with_N_digits, assign_character, CHARACTER_INTRO
+from app.tools import random_with_n_digits, assign_character, CHARACTER_INTRO
+from app.apis import Character
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -102,12 +103,12 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', title='注册', form=form)
 
-@app.route('/characters')
-def characters():
+@app.route('/character_intros')
+def character_intros():
     return render_template('characters.html', characters=CHARACTER_INTRO)
 
-@app.route('/character_intro/<character_id>', methods=['GET'])
-def character_intro(character_id):
+@app.route('/character_page/<character_id>', methods=['GET'])
+def character_page(character_id):
     data = None
     cis = []
     for k in CHARACTER_INTRO:
@@ -115,7 +116,7 @@ def character_intro(character_id):
     for ci in cis:
         if ci['id'] == character_id:
             data = ci
-            return render_template('character_intro.html', data=data)
+            return render_template('character_page.html', data=data)
     else:
         raise ValueError("No such character")
 
@@ -126,7 +127,7 @@ def setup():
     form = TemplateForm()
     if current_user.is_authenticated:
         if form.validate_on_submit():
-            room_name = random_with_N_digits()
+            room_name = random_with_n_digits()
             room = Room(name=room_name)
             db.session.add(room)
             db.session.commit()
@@ -155,7 +156,6 @@ def room(room_name):
                 seat_form = SeatForm()
                 if seat_form.is_submitted():
                     role = current_user.current_role(room_name)
-                    role.character = assign_character(room_name)
                     role.seat = int(seat_form.seat.data)
                     db.session.commit()
                 
@@ -166,6 +166,8 @@ def room(room_name):
 
 # APIs
 # TODO: use flask-restful later
+
+api.add_resource(Character, '/room/<room_name>/<user_id>/character')
 
 @app.route('/room/<room_name>/seats', methods=['GET'])
 @login_required

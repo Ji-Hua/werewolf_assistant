@@ -5,6 +5,44 @@
     <h4>当前游戏设置为 {{ room.game.template }}</h4>
     {% if current_user.is_host(room.name) %}
         <h3>你为本游戏的上帝</h3>
+
+        <input id="assign-characters-button" name="submit" type="submit" value="分发身份"><br>
+        <input id="lock-characters-button" name="submit" type="submit" value="确认身份"><br>
+        <script>
+            var assign_character_api_url = "/room/" + {{ room.name }} + "/" + {{ current_user.id }} + "/character";
+            console.log({{ current_user.id }})
+            console.log(assign_character_api_url)
+            $("#assign-characters-button").click(function(){
+                var data = {
+                    assign_characters: true,
+                };
+                $.ajax({
+                    type: "POST",
+                    url: assign_character_api_url,
+                    data: data,
+                    success: function(response) {
+                        if (response.data) {
+                            console.log(response.locked)
+                        }
+                    }
+                })
+            })
+            $("#lock-characters-button").click(function(){
+                var data = {
+                    assign_characters: false,
+                };
+                $.ajax({
+                    type: "POST",
+                    url: assign_character_api_url,
+                    data: data,
+                    success: function(response) {
+                        if (response.data) {
+                            console.log(response.locked)
+                        }
+                    }
+                })
+            })
+        </script>
         <div id='player-status'>
             <table id='player-status-table'>
             <thead>
@@ -285,13 +323,16 @@
         </script>
     {% else %}
         {% if current_user.current_role(room.name).is_seated %}
+        <script>
+            
+        </script>
             <h3> 你的座位为 {{current_user.current_role(room.name).seat}} </h3>
-            <h3> 你的角色为 {{current_user.current_role(room.name).character}} </h3>
-            <p><img id="character-logo-img" 
-                src="{{url_for('static', filename='character_logo/' + current_user.current_role(room.name).character + '.png')}}"
-                width=128 height=128
-                >
-            </p>
+            <div id='player-character-div'>
+                <h4>身份</h4>
+                <img id="player-character-img" width=128 height=128>
+                <p id="player-character-text"></p>
+            </div>
+            <br>
                 <label for="vote" id="vote-label"></label><br>
                 <select name="vote" id="vote-select"></select>
                 <p>
@@ -382,8 +423,33 @@
                         }
                     })
                 }
+                var api_base =  "/room/" + {{ room.name }} + "/" + {{ current_user.id }}
+                var locked = false
+                function fetchCharacter(url_base, old_name) {
+                    $.ajax({
+                        type: "GET",
+                        url: url_base + "/character",
+                        success: function(response) {
+                            if (response) {
+                                locked = response.locked
+                                if (response.character != old_name) {
+                                    $("#player-character-img").attr('src', response.image_url);
+                                    $("#player-character-text").text(response.character);
+                                }
+                            }
+                        }
+                    })
+                }
+
                 $(document).ready(function(){
-                    setInterval(fetchstatus, 2000);
+                    setInterval(function() {
+                            fetchstatus();
+                            if (!locked) {
+                                var old_character = $("#player-character-text").text();
+                                fetchCharacter(api_base, old_character);
+                            }
+                        }, 2000
+                    );
                 });
                 $("#vote-button").click(function(){
                     var data = {
