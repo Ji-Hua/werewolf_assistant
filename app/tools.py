@@ -4,10 +4,10 @@ import random
 
 from app.models import Room
 
-GAME_ID_LENGTH = 6
+GAME_ID_LENGTH = 4
 
 
-def random_with_N_digits(n=GAME_ID_LENGTH):
+def random_with_n_digits(n=GAME_ID_LENGTH):
     range_start = 10**(n-1)
     range_end = (10**n)-1
     return random.randint(range_start, range_end)

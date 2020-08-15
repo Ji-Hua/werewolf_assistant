@@ -1,6 +1,7 @@
 <html>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <head>
+        <link rel="icon" type="image/png" href="{{url_for('static', filename='logo.png')}}">
     <!--JS-->
     <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
@@ -31,7 +32,7 @@
         <hr>
         烂柯游艺社:
         <a href="{{ url_for('index') }}">首页</a>
-        <a href="{{ url_for('characters') }}">角色</a>
+        <a href="{{ url_for('character_intros') }}">角色</a>
         {% if current_user.is_anonymous %}
         <a href="{{ url_for('login') }}">登录</a>
         <p>新用户？ <a href="{{ url_for('register') }}">点击注册</a></p>
