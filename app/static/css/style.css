@@ -67,3 +67,9 @@ table, th, td {
     align-items: center;
     justify-content: center;
 }
+
+#vote-results {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
