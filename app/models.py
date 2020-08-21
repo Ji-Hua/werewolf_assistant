@@ -231,7 +231,7 @@ class Room(db.Model):
                 p.character = char_queue[i]
                 db.session.commit()
     
-    def lock_charaters(self):
+    def lock_characters(self):
         self.game.character_locked = True
         db.session.commit()
     

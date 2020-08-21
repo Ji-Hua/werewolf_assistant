@@ -2,6 +2,7 @@ import json
 from urllib.parse import unquote
 
 from flask_restful import Resource, reqparse
+from flask_restful.inputs import boolean
 from flask import url_for, make_response
 
 from app import db
@@ -26,7 +27,8 @@ class Character(Resource):
         room = Room.query.filter_by(name=room_name).first()
         if user.is_host(room.name):
             parser = reqparse.RequestParser()
-            parser.add_argument('assign_characters', type=bool)
+            # Note: need to use flask_restful.inputs.boolean
+            parser.add_argument('assign_characters', type=boolean)
             args = parser.parse_args()
             if args['assign_characters']:
                 room.assign_characters()
