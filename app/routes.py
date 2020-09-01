@@ -170,36 +170,6 @@ def room(room_name):
     else:
         return redirect(url_for('login'))
 
-# APIs
-@app.route('/room/<room_name>/campaign', methods=['POST'])
-@login_required
-def campaign(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    seat = int(request.form['seat'])
-    if request.form['campaign'] == 'true':
-        room.campaign(seat)
-        return jsonify({'campaign': True})
-    else:
-        room.quit_campaign(seat)
-        return jsonify({'campaign': False})
-
-@app.route('/room/<room_name>/kill', methods=['POST'])
-@login_required
-def kill(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    seat = int(request.form['seat'])
-    room.kill(seat)
-    return jsonify({'killed': True})
-
-@app.route('/room/<room_name>/sheriff', methods=['POST'])
-@login_required
-def sheriff(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    seat = int(request.form['seat'])
-    room.set_sheriff(seat)
-    return jsonify({'sheriff': seat})
-
-
 # SocketIO apis
 # TODO: Refactor later, need to make emit centralized
 
@@ -279,11 +249,16 @@ def join(message):
             'candidates': room.vote_candidates
         }, room=message['room'])
 
-        emit('campaign_status', {
-            'campaign_status': room.campaign_status,
-        }, room=seated_room_name)
+        if room.round == "警长竞选":
+            emit('campaign_status', {
+                'campaign_status': room.campaign_status,
+            }, room=message['room'])
 
-        emit('campaign_candidates', room.campaign_players, room=message['room'])
+            emit('campaign_candidates', room.campaign_players, room=message['room'])
+
+        emit('character_status', {
+                'locked': room.game.character_locked,
+            }, room=message['room'])
         
         # for debug
         session['receive_count'] = session.get('receive_count', 0) + 1
@@ -304,10 +279,14 @@ def character_assignment(message):
             if message['assign_characters']:
                 room.assign_characters()
                 # broadcast update
-                seated_room_name = f"{room.name}-seated"
-                emit('character_update', {}, room=seated_room_name)
+                emit('character_status', {
+                    'locked': room.game.character_locked,
+                }, room=message['room'])
             else:
                 room.lock_characters()
+                emit('character_status', {
+                    'locked': room.game.character_locked,
+                }, room=message['room'])
             data = {'data': room.description, 'locked': room.game.character_locked}
             emit('game_status', data, room=message['room'])
             emit('characters', {'characters': room.player_characters(user)})
@@ -409,10 +388,9 @@ def campaign_setup(message):
             room.allow_campaign()
         else:
             room.disable_campaign()
-        seated_room_name = f"{room_name}-seated"
         emit('campaign_status', {
             'campaign_status': room.campaign_status,
-        }, room=seated_room_name)
+        }, room=message['room'])
 
         emit('campaign_candidates', room.campaign_players, room=message['room'])
 
@@ -441,6 +419,45 @@ def sheriff_campaign(message):
                     'success': success
                 })
         emit('campaign_candidates', room.campaign_players, room=message['room'])
+
+
+@socketio.on('sheriff_badge', namespace='/game')
+def sheriff_badge(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
+    room = Room.query.filter_by(name=room_name).first()
+    if user.is_host(room.name):
+        seat = message['seat']
+        success = room.set_sheriff(seat)
+        emit('badge_status', {
+            'success': success,
+            'sheriff': room.sheriff
+        })
+
+        # update sheriff by emitting game_status
+        data = {'data': room.description, 'locked': room.game.character_locked}
+        emit('game_status', data, room=message['room'])
+
+
+@socketio.on('player_death', namespace='/game')
+def player_death(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
+    room = Room.query.filter_by(name=room_name).first()
+    if user.is_host(room.name):
+        seat = message['seat']
+        if message['method'] == '复活':
+            success = room.revive(seat)
+        else:
+            success = room.kill(seat, method=message['method'])
+        emit('death_status', {
+            'success': success,
+            'seat': seat
+        })
+
+        # update sheriff by emitting game_status
+        data = {'data': room.description, 'locked': room.game.character_locked}
+        emit('game_status', data, room=message['room'])
 
 
 @socketio.on('leave', namespace='/game')

@@ -145,6 +145,14 @@ class Room(db.Model):
         return survivals
     
     @property
+    def dead(self):
+        dead = []
+        for p in self.seated_players:
+            if p.is_dead:
+                dead.append(p)
+        return dead
+    
+    @property
     def description(self):
         desc = {
             "template": self.template,
@@ -261,16 +269,23 @@ class Room(db.Model):
         return results
 
     def player_at(self, seat):
-        for p in self.survivals:
+        for p in self.seated_players:
             if p.seat == seat:
                 return p
 
     def set_sheriff(self, seat):
-        for p in self.seated_players:
-            p.is_sheriff = False
-        if seat != 0:
-            self.player_at(seat).is_sheriff = True
-        db.session.commit()
+        seat = int(seat)
+        valid_seats = [p.seat for p in self.survivals]
+        valid_seats.append(0) # 0 means destroying the badge
+        if seat in valid_seats:
+            for p in self.seated_players:
+                p.is_sheriff = False
+            if seat != 0:
+                self.player_at(seat).is_sheriff = True
+            db.session.commit()
+            return True
+        else:
+            return False
 
     def allow_campaign(self):
         if self.round == "警长竞选":
@@ -283,9 +298,26 @@ class Room(db.Model):
             db.session.commit()
 
     def kill(self, seat, method="死亡"):
-        self.player_at(seat).death_method = method
-        self.player_at(seat).is_dead = True
-        db.session.commit()
+        seat = int(seat)
+        valid_seats = [p.seat for p in self.survivals]
+        if seat in valid_seats:
+            self.player_at(seat).death_method = method
+            self.player_at(seat).is_dead = True
+            db.session.commit()
+            return True
+        else:
+            return False
+    
+    def revive(self, seat):
+        seat = int(seat)
+        valid_seats = [p.seat for p in self.dead]
+        if seat in valid_seats:
+            self.player_at(seat).death_method = "复活"
+            self.player_at(seat).is_dead = False
+            db.session.commit()
+            return True
+        else:
+            return False
 
     def assign_characters(self):
         if self.game.character_locked:

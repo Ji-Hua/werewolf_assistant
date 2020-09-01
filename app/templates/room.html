@@ -59,9 +59,51 @@
                     var seat = row.seat;
                     $("#player-status-table-name-" + seat).text(row.name);
                     $("#player-status-table-death-" + seat).text(row.death);
+                    if (row.death != '存活') {
+                        $("#player-status-table-row-" + seat).removeClass('alive-player-row').addClass('dead-player-row');
+                    } else {
+                        $("#player-status-table-row-" + seat).removeClass('dead-player-row').addClass('alive-player-row');
+                    }
                     var sheriff_value = (row.is_sheriff) ? '👮' : '-'
                     $("#player-status-table-sheriff-" + seat).text(sheriff_value);
                 }
+
+                {% if current_user.is_host(room.name) %}
+                    // kill
+                    $('.alive-player-row').each(function() {
+                        var seat = $(this).data('seat');
+                        var death_btn = $("<input>").addClass('action-death').attr('name', 'submit')
+                            .attr('type', 'submit').attr('value', '死亡')
+                            .attr('id', "action-death-" + seat).attr('data-seat', seat);
+                        $("#player-status-table-action-" + seat).html(death_btn);
+                    });
+                    $(".action-death").click(function(event) {
+                        var seat = parseInt($(this).data('seat'));
+                        socket.emit('player_death', {
+                            ...request_base,
+                            "method": "死亡",
+                            "seat": seat
+                        });
+                        return false;
+                    });
+                    // revive
+                    $('.dead-player-row').each(function() {
+                        var seat = $(this).data('seat');
+                        var death_btn = $("<input>").addClass('action-revive').attr('name', 'submit')
+                            .attr('type', 'submit').attr('value', '复活')
+                            .attr('id', "action-revive-" + seat).attr('data-seat', seat);
+                        $("#player-status-table-action-" + seat).html(death_btn);
+                    });
+                    $(".action-revive").click(function(event) {
+                        var seat = parseInt($(this).data('seat'));
+                        socket.emit('player_death', {
+                            ...request_base,
+                            "method": "复活",
+                            "seat": seat
+                        });
+                        return false;
+                    });
+                {% endif %}
 
             });
 
@@ -83,11 +125,38 @@
                 $('#player-character-text').text(msg.your_character);
             });
 
-            socket.on('character_update', function() {
-                socket.emit('character_assignment', {
-                    ...request_base,
-                    'fetch_characters': true
-                });
+            socket.on('character_status', function(msg) {
+                console.log(msg);
+                if (msg.locked) {
+                    var new_actions = `
+                        <form id='sheriff-campaign' method='POST' action='#'>
+                            <input id='start-campaign-button' name='submit' type='submit' value='开始警长竞选'>
+                            <input id='end-campaign-button' name='submit' type='submit' value='结束警长竞选'>
+                        </form>
+                    `
+                    $("#host-temp-actions").html(new_actions);
+                    $("#start-campaign-button").click(function(event) {
+                        socket.emit('campaign_setup', {
+                            ...request_base,
+                            "allow_campaign": true
+                        });
+                        return false;
+                    });
+                    $("#end-campaign-button").click(function(event) {
+                        socket.emit('campaign_setup', {
+                            ...request_base,
+                            "allow_campaign": false
+                        });
+                        return false;
+                    });
+                } else {
+                    // not locked = need to update
+                    socket.emit('character_assignment', {
+                        ...request_base,
+                        'fetch_characters': true
+                    });
+                }
+
             })
 
             // Interval function that tests message latency by sending a "ping"
@@ -130,27 +199,6 @@
                     ...request_base,
                     "assign_characters": false,
                     "fetch_characters": false
-                });
-                var new_actions = `
-                    <form id='sheriff-campaign' method='POST' action='#'>
-                        <input id='start-campaign-button' name='submit' type='submit' value='开始警长竞选'>
-                        <input id='end-campaign-button' name='submit' type='submit' value='结束警长竞选'>
-                    </form>
-                `
-                $("#host-temp-actions").html(new_actions);
-                $("#start-campaign-button").click(function(event) {
-                    socket.emit('campaign_setup', {
-                        ...request_base,
-                        "allow_campaign": true
-                    });
-                    return false;
-                });
-                $("#end-campaign-button").click(function(event) {
-                    socket.emit('campaign_setup', {
-                        ...request_base,
-                        "allow_campaign": false
-                    });
-                    return false;
                 });
                 return false;
             });
@@ -309,6 +357,26 @@
                 } else {
                     $('#player-status-table-sheriff-' + seat).html('')
                     $('#info-box').html('');
+                    {% if current_user.is_host(room.name) %}
+                        var sheriffSelectForm = `
+                            <form id="sheriff-assignment" action='#'>
+                                <select id='sheriff-select'></select>
+                                <input id="sheriff-button" name="submit" type="submit" value="授予警徽">
+                            </form>`
+                        $('#host-temp-actions').html(sheriffSelectForm);
+                        var sheriffOptionsAsString = "<option value='0'>销毁</option>";
+                        $('.alive-player-row').each(function() {
+                            sheriffOptionsAsString += "<option value='" +  $(this).data('seat') + "'>" +  $(this).data('seat') + "</option>";
+                        });
+                        $("#sheriff-select").find('option').remove().end().append($(sheriffOptionsAsString));
+                        $('#sheriff-button').click(function(event) {
+                            socket.emit('sheriff_badge', {
+                                ...request_base,
+                                'seat': $( "#sheriff-select option:selected" ).val()
+                            });
+                            return false;
+                        })
+                    {% endif %}
                 }
 
             })
@@ -350,6 +418,24 @@
 
             })
 
+            //👮 sheriff handling
+            socket.on('badge_status', function(msg){
+                if (msg.success) {
+                    console.log("警徽交给" + msg.sheriff)
+                } else {
+                    alert("操作失败，请重试")
+                }
+            })
+
+            socket.on('death_status', function(msg){
+                if (msg.success) {
+                    console.log("死亡" + msg.seat)
+                    
+                } else {
+                    alert("操作失败，请重试")
+                }
+            })
+
         });
     </script>
     <h1>游戏 {{ room.name }}</h1>
@@ -376,7 +462,7 @@
 
         <br>
         <div id='host-temp-actions'>
-            <form id="character-assignment" method="POST" action='#'>
+            <form id="character-assignment" action='#'>
                 <input id="assign-characters-button" name="submit" type="submit" value="分发身份">
                 <input id="lock-characters-button" name="submit" type="submit" value="确认身份">
             </form>
@@ -415,7 +501,7 @@
                 <td id='player-status-table-name-{{i}}'></td>
                 <td id='player-status-table-character-{{i}}'></td>
                 <td id='player-status-table-death-{{i}}'></td>
-                <td id='player-status-table-sheriff-{{i}}'></td>
+                <td class='sheriff-td' id='player-status-table-sheriff-{{i}}'></td>
                 <td id='player-status-table-votefor-{{i}}' class='player-vote-for'></td>
                 <td id='player-status-table-votenum-{{i}}'></td>
                 <td class='action-td' id='player-status-table-action-{{i}}'></td>
