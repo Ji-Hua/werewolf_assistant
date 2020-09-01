@@ -1,15 +1,22 @@
-from flask import render_template, flash, redirect, url_for, request, jsonify
+from threading import Lock
+from urllib.parse import unquote
+
+from flask import render_template, flash, redirect, url_for, request, \
+    jsonify, copy_current_request_context, session
 from flask_login import current_user, login_user, logout_user, login_required
+from flask_restful import Resource, reqparse
+from flask_restful.inputs import boolean
+from flask_socketio import SocketIO, emit, join_room, leave_room, \
+    close_room, rooms, disconnect
 from werkzeug.urls import url_parse
 
-from app import app, db, api
+from app import app, db, socketio
 from app.email import send_password_reset_email
 from app.forms import (LoginForm, RegistrationForm, CreateGameForm, 
     GameRoundForm, SeatForm,TemplateForm, ResetPasswordRequestForm,
     ResetPasswordForm)
 from app.models import User, Vote, Game, Room, Player
 from app.tools import random_with_n_digits, assign_character, CHARACTER_INTRO
-from app.apis import Character
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -163,129 +170,334 @@ def room(room_name):
     else:
         return redirect(url_for('login'))
 
+# SocketIO apis
+# TODO: Refactor later, need to make emit centralized
 
-# APIs
-# TODO: use flask-restful later
+thread = None
+thread_lock = Lock()
 
-api.add_resource(Character, '/room/<room_name>/<user_id>/character')
+# def background_thread():
+#     """Example of how to send server generated events to clients."""
+#     count = 0
+#     while True:
+#         socketio.sleep(10)
+#         count += 1
+#         socketio.emit('my_response',
+#                       {'data': 'Server generated event', 'count': count},
+#                       namespace='/game')
 
-@app.route('/room/<room_name>/seats', methods=['GET'])
-@login_required
-def seats(room_name):
+@socketio.on('connect', namespace='/game')
+def test_connect():
+    # global thread
+    # with thread_lock:
+    #     if thread is None:
+    #         thread = socketio.start_background_task(background_thread)
+    emit('my_response', {'data': 'Connected', 'count': 0})
+
+@socketio.on('join', namespace='/game')
+def join(message):
+    room_name = message['room']
+    user = User.query.filter_by(id=message['user_id']).first()
     room = Room.query.filter_by(name=room_name).first()
-    seated_players = room.seated_players
-    results = []
-    for p in seated_players:
-        results.append(p.description)
-    return jsonify({'results': results})
 
-@app.route('/room/<room_name>/available_seats', methods=['GET'])
-@login_required
-def available_seats(room_name):
+    if room.has_user(user.id):
+        join_room(room_name) # use room to define room id
+
+        # check if user is seated
+        if user.is_host(room.name):
+            your_character = '上帝'
+            emit('characters', {
+                'characters': room.player_characters(user),
+            })
+        else:
+            role = user.current_role(room.name)
+            if role.is_seated:
+                emit('seated', {'seat': role.seat})
+                your_character = role.character or '等待分发'
+                seated_room_name = f"{room_name}-seated"
+                join_room(seated_room_name)
+            else:
+                audience_room_name = f"{room_name}-audience"
+                join_room(audience_room_name)
+                your_character = '等待分发'
+                    # send available seats to audience only
+                emit('available_seats', {
+                    'seats': room.available_seats}, room=audience_room_name)
+
+            # separate characters from the other information
+            # so that only host could see all characters
+            file_name = f"character_logo/{your_character}.png"
+            chracter_url = unquote(url_for('static', filename=file_name))
+            emit('player_character', {
+                'your_character': your_character,
+                'character_url': chracter_url
+            })
+
+        emit('game_status',
+            {'data': room.description}, room=room_name)
+
+        results = [{'vote_from': k, **v}
+                    for k, v in room.view_vote_results(room.round).items()]
+        emit('vote_results', {
+                'vote_status': room.vote_status,
+                'results': results
+            }, room=message['room'])
+        
+        emit('vote_status', {
+            'vote_status': room.vote_status,
+            'player_vote_status': room.player_vote_status,
+            'candidates': room.vote_candidates
+        }, room=message['room'])
+
+        if room.round == "警长竞选":
+            emit('campaign_status', {
+                'campaign_status': room.campaign_status,
+            }, room=message['room'])
+
+            emit('campaign_candidates', room.campaign_players, room=message['room'])
+
+        emit('character_status', {
+                'locked': room.game.character_locked,
+            }, room=message['room'])
+        
+        # for debug
+        session['receive_count'] = session.get('receive_count', 0) + 1
+        emit('my_response',
+            {'data': f'In rooms: {", ".join(rooms())}',
+            'count': session['receive_count']}, room=room_name)
+
+
+@socketio.on('character_assignment', namespace='/game')
+def character_assignment(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
     room = Room.query.filter_by(name=room_name).first()
-    return jsonify({'seats': room.available_seats})
-
-
-@app.route('/room/<room_name>/game_status', methods=['GET'])
-@login_required
-def game_status(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    return jsonify({'status': room.game.status})
-
-
-@app.route('/room/<room_name>/vote', methods=['POST'])
-@login_required
-def vote(room_name):
-    player = Player.query.filter_by(id=int(request.form['player_id'])).first()
-    if player.capable_for_vote:
-        game = Room.query.filter_by(name=room_name).first().game
-        vote_for = int(request.form['vote_for'])
-        if vote_for <= 0 or vote_for > 12:
-            vote_for = 0
-        round = request.form['round']
-        prev_votes = Vote.query.filter_by(game_id=game.id, player_id=player.id, round=round).all()
-        if prev_votes:
-            for v in prev_votes:
-                db.session.delete(v)
-            db.session.commit()
-        vote = Vote(game_id=game.id, player_id=player.id, vote_for=vote_for, round=round)
-        db.session.add(vote)
-        db.session.commit()
-        player.capable_for_vote = False
-        db.session.commit()
-        return {"vote": vote_for}
+    if user.is_host(room.name):
+        if message['fetch_characters']:
+            pass
+        else:
+            if message['assign_characters']:
+                room.assign_characters()
+                # broadcast update
+                emit('character_status', {
+                    'locked': room.game.character_locked,
+                }, room=message['room'])
+            else:
+                room.lock_characters()
+                emit('character_status', {
+                    'locked': room.game.character_locked,
+                }, room=message['room'])
+            data = {'data': room.description, 'locked': room.game.character_locked}
+            emit('game_status', data, room=message['room'])
+            emit('characters', {'characters': room.player_characters(user)})
     else:
-        return {"vote": -1}
-    
-    
-@app.route('/room/<room_name>/round', methods=['POST'])
-@login_required
-def round(room_name):
+        role = user.current_role(room.name)
+        your_character = role.character or '等待分发'
+        file_name = f"character_logo/{your_character}.png"
+        chracter_url = unquote(url_for('static', filename=file_name))
+        emit('player_character', {
+                'your_character': your_character,
+                'character_url': chracter_url
+        })
+
+
+@socketio.on('round_assignment', namespace='/game')
+def round_assignment(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
     room = Room.query.filter_by(name=room_name).first()
-    if request.form['allow_vote'] == 'true':
-        round_name = request.form['round_name']
-        room.set_round(round_name)
-        room.allow_votes()
-        return jsonify({'vote': 1})
+    if user.is_host(room.name):
+        room.set_round(message['round_name'])
+
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('game_stage', {'stage': room.round}, room=message['room'])
+
+
+@socketio.on('vote_setup', namespace='/game')
+def vote_setup(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
+    room = Room.query.filter_by(name=room_name).first()
+    if user.is_host(room.name):
+        if message['allow_vote']:
+            room.allow_votes()
+            emit('vote_status', {
+                'vote_status': room.vote_status,
+                'player_vote_status': room.player_vote_status,
+                'candidates': room.vote_candidates
+            }, room=message['room'])
+        else:
+            room.disable_votes()
+            results = room.view_vote_results(room.round)
+            
+            data = {'vote_status': room.vote_status,
+                'results': [{'vote_from': k, **v} for k, v in results.items()]}
+            emit('vote_results', data, room=message['room'])
     else:
-        room.disable_votes()
-        room.set_round('')
-        return jsonify({'vote': 0})
-    
-@app.route('/room/<room_name>/candidates', methods=['GET'])
-@login_required
-def candidates(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    if room.round == "警长竞选":
-        candidates = [p.seat for p in room.survivals if p.in_sheriff_campaign and p.is_candidate]
-    else:
-        candidates = [p.seat for p in room.survivals if p.is_candidate]
-    return jsonify({'candidates': candidates})
-
-@app.route('/room/<room_name>/results/<round_name>', methods=['GET'])
-@login_required
-def results(room_name, round_name):
-    room = Room.query.filter_by(name=room_name).first()
-    results = room.view_vote_results(round_name)
-    results = sorted(results, key=lambda x: x['vote_from'])
-    counter = {}
-    for row in results:
-        value = row['vote_for']
-        if value > 0 and value < 12:
-            count = counter.get(value, 0)
-            counter[value] = count + 1
-    if counter:
-        max_vote = max(list(counter.values()))
-        most_voted = sorted([k for k, v in counter.items() if v == max_vote])
-    else:
-        most_voted = []
-    return jsonify({'results': results, 'most_voted': most_voted})
+        pass
+        # TODO: should make this an endpoint for checking vote results
 
 
-@app.route('/room/<room_name>/campaign', methods=['POST'])
-@login_required
-def campaign(room_name):
+@socketio.on('vote_for', namespace='/game')
+def vote_for(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
     room = Room.query.filter_by(name=room_name).first()
-    seat = int(request.form['seat'])
-    if request.form['campaign'] == 'true':
-        room.campaign(seat)
-        return jsonify({'campaign': True})
-    else:
-        room.quit_campaign(seat)
-        return jsonify({'campaign': False})
+    if room.has_user(user.id):
+        role = user.current_role(room.name)
+        if role.capable_for_vote:
+            check = role.vote_for(message['vote_for'])
+            if check[0]:
+                emit('vote_success', {'vote_for': check[-1]})
+            else:
+                emit('vote_failure', {'error_message': '投票失败'})
+        else:
+            emit('vote_failure', {'error_message': '本轮不可投票'})
 
-@app.route('/room/<room_name>/kill', methods=['POST'])
-@login_required
-def kill(room_name):
-    room = Room.query.filter_by(name=room_name).first()
-    seat = int(request.form['seat'])
-    room.kill(seat)
-    return jsonify({'killed': True})
 
-@app.route('/room/<room_name>/sheriff', methods=['POST'])
-@login_required
-def sheriff(room_name):
+@socketio.on('sit_down', namespace='/game')
+def sit_down(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
     room = Room.query.filter_by(name=room_name).first()
-    seat = int(request.form['seat'])
-    room.set_sheriff(seat)
-    return jsonify({'sheriff': seat})
+    audience_room_name = f"{room_name}-audience"
+    if room.has_user(user.id):
+        role = user.current_role(room.name)
+        seat = int(message['seat'])
+        success = role.sit_at(seat)
+        if success:
+            leave_room(audience_room_name)
+            emit('seated', {'seat': role.seat})
+            seated_room_name = f"{room_name}-seated"
+            join_room(seated_room_name)
+
+    data = {'data': room.description, 'locked': room.game.character_locked}
+    emit('game_status', data, room=message['room'])
+
+    emit('available_seats', {
+            'seats': room.available_seats}, room=audience_room_name)
+
+
+@socketio.on('campaign_setup', namespace='/game')
+def campaign_setup(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
+    room = Room.query.filter_by(name=room_name).first()
+    if user.is_host(room.name):
+        if message['allow_campaign']:
+            room.allow_campaign()
+        else:
+            room.disable_campaign()
+        emit('campaign_status', {
+            'campaign_status': room.campaign_status,
+        }, room=message['room'])
+
+        emit('campaign_candidates', room.campaign_players, room=message['room'])
+
+
+@socketio.on('sheriff_campaign', namespace='/game')
+def sheriff_campaign(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
+    room = Room.query.filter_by(name=room_name).first()
+    if room.has_user(user.id):
+        role = user.current_role(room.name)
+        # Only allow seated players to vote
+        if role.is_seated:
+            # campaign = True means in campaign
+            # False means quitting campaign
+            if message['campaign']:
+                success = role.campaign()
+                emit('campaign_registry', {
+                    'seat': role.seat, 
+                    'success': success
+                })
+            else:
+                success = role.quit_campaign()
+                emit('campaign_quit', {
+                    'seat': role.seat, 
+                    'success': success
+                })
+        emit('campaign_candidates', room.campaign_players, room=message['room'])
+
+
+@socketio.on('sheriff_badge', namespace='/game')
+def sheriff_badge(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
+    room = Room.query.filter_by(name=room_name).first()
+    if user.is_host(room.name):
+        seat = message['seat']
+        success = room.set_sheriff(seat)
+        emit('badge_status', {
+            'success': success,
+            'sheriff': room.sheriff
+        })
+
+        # update sheriff by emitting game_status
+        data = {'data': room.description, 'locked': room.game.character_locked}
+        emit('game_status', data, room=message['room'])
+
+
+@socketio.on('player_death', namespace='/game')
+def player_death(message):
+    user_id, room_name = message['user_id'], message['room']
+    user = User.query.filter_by(id=user_id).first()
+    room = Room.query.filter_by(name=room_name).first()
+    if user.is_host(room.name):
+        seat = message['seat']
+        if message['method'] == '复活':
+            success = room.revive(seat)
+        else:
+            success = room.kill(seat, method=message['method'])
+        emit('death_status', {
+            'success': success,
+            'seat': seat
+        })
+
+        # update sheriff by emitting game_status
+        data = {'data': room.description, 'locked': room.game.character_locked}
+        emit('game_status', data, room=message['room'])
+
+
+@socketio.on('leave', namespace='/game')
+def leave(message):
+    leave_room(message['room'])
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my_response',
+         {'data': 'In rooms: ' + ', '.join(rooms()),
+          'count': session['receive_count']})
+
+
+@socketio.on('close_room', namespace='/game')
+def close(message):
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my_response', {'data': 'Room ' + message['room'] + ' is closing.',
+                         'count': session['receive_count']},
+         room=message['room'])
+    close_room(message['room'])
+
+
+@socketio.on('disconnect_request', namespace='/game')
+def disconnect_request():
+    @copy_current_request_context
+    def can_disconnect():
+        disconnect()
+
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    # for this emit we use a callback function
+    # when the callback function is invoked we know that the message has been
+    # received and it is safe to disconnect
+    emit('my_response',
+         {'data': 'Disconnected!', 'count': session['receive_count']},
+         callback=can_disconnect)
+
+
+@socketio.on('my_ping', namespace='/game')
+def ping_pong():
+    emit('my_pong')
+
+
+@socketio.on('disconnect', namespace='/game')
+def test_disconnect():
+    print('Client disconnected', request.sid)
