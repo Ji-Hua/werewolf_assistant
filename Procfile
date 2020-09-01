@@ -1,1 +1,1 @@
-web: flask db upgrade; gunicorn -w 5 application:app
+web: flask db upgrade; gunicorn -k gevent -w 10 application:app
