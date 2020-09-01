@@ -7,7 +7,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_mail import Mail
 from flask_restful import Api
-from flask_socketio import SocketIO
 
 from config import Config
 
@@ -16,7 +15,6 @@ app.config.from_object(Config)
 api = Api(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-socketio = SocketIO(app)
 
 login = LoginManager()
 login.init_app(app)
@@ -41,6 +39,3 @@ if not app.debug:
             credentials=auth, secure=secure)
         mail_handler.setLevel(logging.ERROR)
         app.logger.addHandler(mail_handler)
-
-if __name__ == '__main__':
-    socketio.run(app)
