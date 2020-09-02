@@ -1,1 +1,1 @@
-web: flask db upgrade; gunicorn -k gevent -w 8 application:app
+web: flask db upgrade; flask run --host=0.0.0.0 --port=8000
