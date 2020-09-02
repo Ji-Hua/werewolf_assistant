@@ -1,1 +1,1 @@
-web: flask db upgrade; flask run --host=0.0.0.0
+web: flask db upgrade; gunicorn -k eventlet -w 8 --keep-alive 15 application:app
