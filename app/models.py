@@ -288,9 +288,8 @@ class Room(db.Model):
             return False
 
     def allow_campaign(self):
-        if self.round == "警长竞选":
-            self.game.allow_to_campaign = True
-            db.session.commit()
+        self.game.allow_to_campaign = True
+        db.session.commit()
 
     def disable_campaign(self):
         if self.round == "警长竞选":
