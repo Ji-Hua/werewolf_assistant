@@ -1,3 +1,4 @@
+from collections import defaultdict
 from threading import Lock
 from urllib.parse import unquote
 
@@ -236,13 +237,24 @@ def join(message):
         emit('game_status',
             {'data': room.description}, room=room_name)
 
-        results = [{'vote_from': k, **v}
-                    for k, v in room.view_vote_results(room.round).items()]
-        emit('vote_results', {
-                'vote_status': room.vote_status,
-                'results': results
-            }, room=message['room'])
+        # vote results
+        data = {
+            'results': [{'vote_from': k, **v} for k, v in results.items()]
+        }
+        # get maxinum vote
+        max_vote = max([v['vote_num'] for v in data['results']])
+        max_vote_seats = list(filter(lambda x: x['vote_num'] == max_vote, data['results']))
+        data['max_votes'] = max_vote_seats
+
+        # get vote relationships
+        vote_relations = defaultdict(list)
+        for v in data['results']:
+            vote_relations[v['vote_for']].append(v['vote_from'])
+        data['votes'] = vote_relations
+        emit('vote_results', data,
+            room=message['room'])
         
+        # vote_status
         emit('vote_status', {
             'vote_status': room.vote_status,
             'player_vote_status': room.player_vote_status,
@@ -283,10 +295,11 @@ def character_assignment(message):
                     'locked': room.game.character_locked,
                 }, room=message['room'])
             else:
-                room.lock_characters()
+                success = room.lock_characters()
                 emit('character_status', {
                     'locked': room.game.character_locked,
                 }, room=message['room'])
+
             data = {'data': room.description, 'locked': room.game.character_locked}
             emit('game_status', data, room=message['room'])
             emit('characters', {'characters': room.player_characters(user)})
@@ -329,10 +342,27 @@ def vote_setup(message):
         else:
             room.disable_votes()
             results = room.view_vote_results(room.round)
+            emit('vote_status', {
+                'vote_status': room.vote_status,
+                }, room=message['room'])
             
-            data = {'vote_status': room.vote_status,
-                'results': [{'vote_from': k, **v} for k, v in results.items()]}
-            emit('vote_results', data, room=message['room'])
+            # NOTE: prettify vote results
+            # This should be done in frontend but I'm so bad at js :(
+            data = {
+                'results': [{'vote_from': k, **v} for k, v in results.items()]
+            }
+            # get maxinum vote
+            max_vote = max([v['vote_num'] for v in data['results']])
+            max_vote_seats = list(filter(lambda x: x['vote_num'] == max_vote, data['results']))
+            data['max_votes'] = max_vote_seats
+
+            # get vote relationships
+            vote_relations = defaultdict(list)
+            for v in data['results']:
+                vote_relations[v['vote_for']].append(v['vote_from'])
+            data['votes'] = vote_relations
+            emit('vote_results', data,
+                room=message['room'])
     else:
         pass
         # TODO: should make this an endpoint for checking vote results

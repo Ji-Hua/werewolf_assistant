@@ -272,6 +272,7 @@
                     }
                 } else {
                     $('#vote-status-span').text('关闭');
+                    $('#info-box').html('');
                 }
             });
 
@@ -290,10 +291,26 @@
 
             // check vote results
             socket.on('vote_results', function(msg) {
-                $('#vote-status-span').text('关闭');
+                console.log(msg)
+                var vote_info = `
+                    <p>得票最多：<span id='span-vote-max'></span></p>
+                    <p>投票结果<p>
+                    <div id='vote-for-div'></div>
+                `;
+                $('#info-box').html(vote_info);
+                var max_text = msg.max_votes.map(d => {
+                    return d.vote_from + " (" + d.vote_num + "票)";
+                }).join(' ');
+
+                $('#span-vote-max').text(max_text);
+
                 for(var i = 0; i < msg.results.length; i++) {
                     var row = msg.results[i];
                     var seat = row.vote_from;
+                    var text = '';
+                    if (msg.votes.hasOwnProperty(seat)) {
+                        text += "<p>" + seat + " <- " + msg.votes[seat] + "</p>"
+                    }
                     if (row.vote_for === 0) {
                         $("#player-status-table-votefor-" + seat).text("弃权");
                     } else {
@@ -301,6 +318,8 @@
                     }
                     $("#player-status-table-votenum-" + seat).text(row.vote_num);
                 }
+                $('#vote-for-div').html(text)
+
             });
 
             // player sit down & stand up
@@ -357,7 +376,6 @@
                     $('#info-box').html(campaign_info);
                 } else {
                     $('#player-status-table-sheriff-' + seat).html('')
-                    $('#info-box').html('');
                     {% if current_user.is_host(room.name) %}
                         var sheriffSelectForm = `
                             <form id="sheriff-assignment" action='#'>

@@ -332,8 +332,15 @@ class Room(db.Model):
                 db.session.commit()
 
     def lock_characters(self):
+        # check if all seated players assigned characters
+        for p in self.seated_players:
+            if p.character is None:
+                return False
+            
         self.game.character_locked = True
         db.session.commit()
+        return True
+            
 
     def build_character_queue(self, template):
         queue = []
