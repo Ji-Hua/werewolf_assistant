@@ -167,7 +167,7 @@
             window.setInterval(function() {
                 start_time = (new Date).getTime();
                 socket.emit('my_ping');
-            }, 1000);
+            }, 3000);
 
             // Handler for the "pong" message. When the pong is received, the
             // time from the ping is stored, and the average of the last 30
@@ -290,6 +290,7 @@
 
             // check vote results
             socket.on('vote_results', function(msg) {
+                $('#vote-status-span').text('关闭');
                 for(var i = 0; i < msg.results.length; i++) {
                     var row = msg.results[i];
                     var seat = row.vote_from;
