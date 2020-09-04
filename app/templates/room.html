@@ -337,6 +337,7 @@
 
             // player sit down & stand up
             socket.on('available_seats', function(msg) {
+                $(".action-td").html('')
                 for(var i = 0; i < msg.seats.length; i++) {
                     var seat = msg.seats[i];
                     var sit_btn = $("<input>").addClass('action-sitdown').attr('name', 'submit')
