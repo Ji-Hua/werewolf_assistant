@@ -390,8 +390,10 @@ def campaign_setup(message):
     room = Room.query.filter_by(name=room_name).first()
     if user.is_host(room.name):
         if message['allow_campaign']:
+            room.set_round("警长竞选")
             room.allow_campaign()
         else:
+            room.set_round("警长竞选")
             room.disable_campaign()
         emit('campaign_status', {
             'campaign_status': room.campaign_status,
