@@ -266,7 +266,19 @@ class Room(db.Model):
         for k, v in counter.items():
             results[k]['vote_num'] = v
                                 
-        return results
+        data = {'results': [{'vote_from': k, **v} for k, v in results.items()]}
+        # get maxinum vote
+        max_vote = max([v['vote_num'] for v in data['results']])
+        max_vote_seats = list(filter(lambda x: x['vote_num'] == max_vote, data['results']))
+        data['max_votes'] = max_vote_seats
+
+        # get vote relationships
+        vote_relations = defaultdict(list)
+        for v in data['results']:
+            vote_relations[v['vote_for']].append(v['vote_from'])
+        data['votes'] = vote_relations
+        data['round'] = self.round
+        return data
 
     def player_at(self, seat):
         for p in self.seated_players:

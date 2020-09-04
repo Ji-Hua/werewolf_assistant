@@ -237,29 +237,16 @@ def join(message):
         emit('game_status',
             {'data': room.description}, room=room_name)
 
-        # vote results
-        data = {
-            'results': [{'vote_from': k, **v} for k, v in results.items()]
-        }
-        # get maxinum vote
-        max_vote = max([v['vote_num'] for v in data['results']])
-        max_vote_seats = list(filter(lambda x: x['vote_num'] == max_vote, data['results']))
-        data['max_votes'] = max_vote_seats
-
-        # get vote relationships
-        vote_relations = defaultdict(list)
-        for v in data['results']:
-            vote_relations[v['vote_for']].append(v['vote_from'])
-        data['votes'] = vote_relations
-        emit('vote_results', data,
-            room=message['room'])
-        
         # vote_status
         emit('vote_status', {
             'vote_status': room.vote_status,
             'player_vote_status': room.player_vote_status,
             'candidates': room.vote_candidates
         }, room=message['room'])
+
+        # vote results
+        emit('vote_results', room.view_vote_results(room.round), room=message['room'])
+        
 
         if room.round == "警长竞选":
             emit('campaign_status', {
@@ -348,20 +335,8 @@ def vote_setup(message):
             
             # NOTE: prettify vote results
             # This should be done in frontend but I'm so bad at js :(
-            data = {
-                'results': [{'vote_from': k, **v} for k, v in results.items()]
-            }
-            # get maxinum vote
-            max_vote = max([v['vote_num'] for v in data['results']])
-            max_vote_seats = list(filter(lambda x: x['vote_num'] == max_vote, data['results']))
-            data['max_votes'] = max_vote_seats
-
-            # get vote relationships
-            vote_relations = defaultdict(list)
-            for v in data['results']:
-                vote_relations[v['vote_for']].append(v['vote_from'])
-            data['votes'] = vote_relations
-            emit('vote_results', data,
+            
+            emit('vote_results', results,
                 room=message['room'])
     else:
         pass

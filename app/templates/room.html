@@ -237,7 +237,16 @@
                 if (msg.vote_status) {
                     $('#vote-status-span').text('开启');
                     var player_seat = $('.your-status-row').data('seat');
-                    var is_valid_voter = ((player_seat > 0) && (player_seat <= 12))
+                    // Filter out those can't vote
+                    var is_seated = ((player_seat > 0) && (player_seat <= 12));
+                    if (is_seated) {
+                        var is_valid_voter = msg.player_vote_status.filter(d => {
+                            return d.seat == player_seat;
+                        })[0].vote_status;
+                    } else {
+                        var is_valid_voter = false;
+                    }
+
                     for(var i = 0; i < msg.player_vote_status.length; i++) {
                         var row = msg.player_vote_status[i];
                         var seat = row.seat;
@@ -246,14 +255,15 @@
                         // check if this player is a seated player 
                         // audience's seat will be 0 or null
                         // host seat will be undefined
-                        if (is_valid_voter) {
+                        var is_candidate = msg.candidates.includes(seat);
+                        if (is_valid_voter && is_candidate) {
                             var vote_btn = $("<input>").addClass('action-votefor').attr('name', 'submit')
                                             .attr('type', 'submit').attr('value', '投票')
                                             .attr('id', "action-votefor-" + seat)
                                             .attr('data-votefrom', player_seat).attr('data-votefor', seat);
                             $("#player-status-table-votefor-" + seat).html(vote_btn);
                         } else {
-                            // only show this to the host
+                            // show this to host and audience 
                             if (row.vote_status) {
                                 $("#player-status-table-votefor-" + seat).text("可以投票");
                             }
@@ -294,7 +304,7 @@
                 console.log(msg)
                 var vote_info = `
                     <p>得票最多：<span id='span-vote-max'></span></p>
-                    <p>投票结果<p>
+                    <p>投票详情：<p>
                     <div id='vote-for-div'></div>
                 `;
                 $('#info-box').html(vote_info);
@@ -304,19 +314,22 @@
 
                 $('#span-vote-max').text(max_text);
 
+                var text = '';
                 for(var i = 0; i < msg.results.length; i++) {
                     var row = msg.results[i];
                     var seat = row.vote_from;
-                    var text = '';
                     if (msg.votes.hasOwnProperty(seat)) {
-                        text += "<p>" + seat + " <- " + msg.votes[seat] + "</p>"
+                        text += "<p>" + msg.votes[seat]+ " 投给 " + seat + "</p>"
                     }
                     if (row.vote_for === 0) {
-                        $("#player-status-table-votefor-" + seat).text("弃权");
+                        $("#player-status-table-votefor-" + seat).text("弃票");
                     } else {
                         $("#player-status-table-votefor-" + seat).text(row.vote_for);
                     }
                     $("#player-status-table-votenum-" + seat).text(row.vote_num);
+                }
+                if (msg.votes[0] != undefined) {
+                    text += "<p>" + msg.votes[0] + " 弃票</p>"
                 }
                 $('#vote-for-div').html(text)
 
