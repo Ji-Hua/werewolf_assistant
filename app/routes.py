@@ -371,6 +371,8 @@ def sit_down(message):
         seat = int(message['seat'])
         success = role.sit_at(seat)
         if success:
+            emit('available_seats', {
+                'seats': room.available_seats}, room=audience_room_name)
             leave_room(audience_room_name)
             emit('seated', {'seat': role.seat})
             seated_room_name = f"{room_name}-seated"
@@ -378,9 +380,6 @@ def sit_down(message):
 
     data = {'data': room.description, 'locked': room.game.character_locked}
     emit('game_status', data, room=message['room'])
-
-    emit('available_seats', {
-            'seats': room.available_seats}, room=audience_room_name)
 
 
 @socketio.on('campaign_setup', namespace='/game')
