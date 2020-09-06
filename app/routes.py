@@ -245,7 +245,8 @@ def join(message):
         }, room=message['room'])
 
         # vote results
-        emit('vote_results', room.view_vote_results(room.round), room=message['room'])
+        if room.round is not None:
+            emit('vote_results', room.view_vote_results(room.round), room=message['room'])
         
 
         if room.round == "警长竞选":
@@ -371,8 +372,7 @@ def sit_down(message):
         seat = int(message['seat'])
         success = role.sit_at(seat)
         if success:
-            emit('available_seats', {
-                'seats': room.available_seats}, room=audience_room_name)
+            emit('available_seats', {'seats': room.available_seats}, room=audience_room_name)
             leave_room(audience_room_name)
             emit('seated', {'seat': role.seat})
             seated_room_name = f"{room_name}-seated"
