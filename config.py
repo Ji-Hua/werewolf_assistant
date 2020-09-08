@@ -13,4 +13,35 @@ class Config(object):
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS') is not None
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    ADMINS = ['werewolf.assistant@gmail.com']
+    ADMINS = os.environ.get('MAIL_ADMIN')
+
+    @staticmethod
+    def init_app(app):
+        pass
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+    MAIL_SERVER = 'smtp.googlemail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
+        'sqlite:///' + os.path.join(basedir, 'app-dev.db')
+
+
+class TestingConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or \
+        'sqlite:///' + os.path.join(basedir, 'app-test.db')
+
+class ProductionConfig(Config):
+    pass
+
+
+config = {
+    'development': DevelopmentConfig,
+    'testing': TestingConfig,
+    'production': ProductionConfig,
+    'default': ProductionConfig
+}
