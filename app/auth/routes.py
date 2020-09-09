@@ -56,7 +56,7 @@ def reset_password(token):
         return redirect(url_for('main.index'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
-        user.set_password(form.password.data)
+        user.password = form.password.data
         db.session.commit()
         flash('密码已经重置')
         return redirect(url_for('auth.login'))
@@ -75,8 +75,8 @@ def register():
         return redirect(url_for('main.index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
-        user.set_password(form.password.data)
+        user = User(username=form.username.data,
+            email=form.email.data, password=form.password.data)
         db.session.add(user)
         db.session.commit()
         flash('注册成功')
