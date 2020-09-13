@@ -5,8 +5,9 @@ from app.models import User, Game
 from app.tools import GAME_TEMPLATES
 
 class LoginForm(FlaskForm):
-    username = StringField('用户名', validators=[DataRequired()])
+    email = StringField('电子邮箱', validators=[DataRequired()])
     password = PasswordField('密码', validators=[DataRequired()])
+    remember_me = BooleanField('保持登录')
     submit = SubmitField('登录')
 
 
@@ -39,24 +40,6 @@ class TemplateForm(FlaskForm):
     choices = [(key, key) for key in GAME_TEMPLATES.keys()]
     template = SelectField('游戏设置', choices=choices)
     submit = SubmitField('开始游戏')
-
-
-class SeatForm(FlaskForm):
-    seat = SelectField('选择座位')
-    submit = SubmitField('坐下')
-
-
-class GameRoundForm(FlaskForm):
-    
-    round_opts = [
-        ('警长竞选', '警长竞选'),
-        ('第1天', '第1天'),
-        ('第2天', '第2天'),
-        ('第3天', '第3天'),
-        ('第4天', '第4天'),
-        ('第5天', '第5天'),
-    ]
-    round = SelectField('选择当前轮次', choices=round_opts, validate_choice=False)
 
 
 class ResetPasswordRequestForm(FlaskForm):

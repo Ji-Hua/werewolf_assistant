@@ -12,17 +12,19 @@ from app.forms import (LoginForm, RegistrationForm,
 from app.auth import bp
 from app.models import User
 
+from .email import send_email
+
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        user = User.query.filter_by(email=form.email.data).first()
         if user is None or not user.check_password(form.password.data):
             flash('密码或用户名不正确')
             return redirect(url_for('auth.login'))
-        login_user(user)
+        login_user(user, form.remember_me.data)
         # NOTE: use next_page here from flask-login documents
         # https://flask-login.readthedocs.io/en/latest/#configuring-your-application
         next_page = request.args.get('next')
@@ -79,6 +81,10 @@ def register():
             email=form.email.data, password=form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash('注册成功')
-        return redirect(url_for('auth.login'))
+        
+        token = user.generate_confirmation_token()
+        send_email(user.email, 'Confirm Your Account',
+            'auth/email/confirm', user=user, token=token)
+        flash('注册成功，确认邮件已发送至您的邮箱')
+        return redirect(url_for('main.index'))
     return render_template('auth/register.html', title='注册', form=form)
