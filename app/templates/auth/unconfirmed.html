@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}烂柯游艺社 - 确认账号{% endblock %}
+
+{% block content %}
+<div>
+    <h3>你尚未完成电子邮件确认</h3>
+    <p>
+        在完成注册前，你没有访问这些功能的权限。
+        一封含有确认帐号链接的邮件应已发至你的邮箱，请查收
+    </p>
+    <p>
+        未收到邮件?
+        <a href="{{ url_for('auth.resend_confirmation') }}">重发</a>
+    </p>
+</div>
+{% endblock %}

@@ -19,9 +19,19 @@ def send_email(subject, sender, recipients, text_body, html_body):
         current_app._get_current_object(), msg)).start()
 
 
+def send_confirmation_email(user):
+    token = user.generate_confirmation_token()
+    send_email('[烂柯游艺社] 用户注册',
+               sender=current_app.config['MAIL_USERNAME'],
+               recipients=[user.email],
+               text_body=render_template('email/email_confirmation.txt',
+                                         user=user, token=token),
+               html_body=render_template('email/email_confirmation.html',
+                                         user=user, token=token))
+
+
 def send_password_reset_email(user):
     token = user.get_reset_password_token()
-    print(current_app.config)
     send_email('[烂柯游艺社] 重置密码',
                sender=current_app.config['MAIL_USERNAME'],
                recipients=[user.email],

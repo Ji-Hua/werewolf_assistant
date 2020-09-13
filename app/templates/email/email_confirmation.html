@@ -1,0 +1,12 @@
+<p>你好 {{ user.username }},</p>
+<p>
+    进行邮箱确认
+    <a href="{{ url_for('auth.confirm', token=token, _external=True) }}">
+        请点击此链接
+    </a>.
+</p>
+<p>或者, 可以将下面链接复制到浏览器地址栏:</p>
+<p>{{ url_for('auth.confirm', token=token, _external=True) }}</p>
+<p>如果没有请求注册用户，请忽略此邮件。</p>
+<p>祝好</p>
+<p>烂柯游艺社</p>
