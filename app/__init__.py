@@ -2,6 +2,7 @@ import logging
 from logging.handlers import SMTPHandler
 
 from flask import Flask, Blueprint
+from flask_bootstrap import Bootstrap
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -18,6 +19,7 @@ login = LoginManager()
 login.login_view = 'auth.login'
 mail = Mail()
 socketio = SocketIO()
+bootstrap = Bootstrap()
 
 
 def create_app(config_name):
@@ -40,6 +42,8 @@ def create_app(config_name):
     mail.init_app(app)
 
     socketio.init_app(app)
+
+    bootstrap.init_app(app)
 
     # routes and error handling
     from app.main import bp as main_bp

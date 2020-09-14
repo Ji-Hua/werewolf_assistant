@@ -1,58 +1,58 @@
-<html>
+{% extends "bootstrap/base.html" %}
+
+{% block metas %}
+    {{ super () }}
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <head>
-        <link rel="icon" type="image/png" href="{{url_for('static', filename='logo.png')}}">
+{% endblock %}
+
+{% block head %}
+    {{ super () }}
+    <link rel="icon" type="image/png" href="{{url_for('static', filename='logo.png')}}">
     <!--JS-->
     <script src="{{url_for('static', filename='js/jquery-3.5.1.js')}}"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
-    <script src="{{url_for('static', filename='js/bootstrap.min.js')}}"></script>
     <!--css style-->
     <link rel="stylesheet" href="{{url_for('static', filename='css/style.css')}}">
-    <link rel="stylesheet" href="{{url_for('static', filename='css/bootstrap.min.css')}}">
     <!--fonts-->
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
 
     {% if title %}
-    <title>{{ title }} - 烂柯游艺社</title>
+    <title>烂柯游艺社-{{ title }}</title>
     {% else %}
     <title>烂柯游艺社</title>
     {% endif %}
+{% endblock %}
 
-</head>
-
-<body>
-    <div id="header">
-        <img class="logo" src="{{url_for('static', filename='logo.png')}}">
-        <div class="banner">
-            <p>
-                <span class="chinesecursive bannertext">烂柯游艺社<br></span>
-                <span class="bannertext">Lanke Board Game Club</span>
-            </p>
+{% block navbar %}
+    <img class="logo" src="{{url_for('static', filename='logo.png')}}">    
+    <div class="banner">
+        <p>
+            <span class="chinesecursive bannertext">烂柯游艺社<br></span>
+            <span class="bannertext">Lanke Board Game Club</span>
+        </p>
+    </div>
+    <nav class="navbar navbar-light nounderline" style="background-color: #ffffff;">
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-left">
+                <li class='nav-item'><a href="{{ url_for('main.index') }}" class='nounderline'>首页</a></li>
+                <li class='nav-item'><a href="{{ url_for('character.character_intros') }}">角色</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <p class="navbar-text">登录为 {{ current_user.username }}</p>
+                {% if current_user.is_anonymous %}
+                <li class='nav-item'><a href="{{ url_for('auth.login') }}">登录</a></li>
+                <li class='nav-item'><a href="{{ url_for('auth.register') }}">注册</a></li>
+                {% else %}
+                <li class='nav-item'><a href="{{ url_for('auth.logout') }}">登出</a></li>
+                {% endif %}
+            </ul>
         </div>
-        <hr>
-        烂柯游艺社:
-        <a href="{{ url_for('main.index') }}">首页</a>
-        <a href="{{ url_for('character.character_intros') }}">角色</a>
-        {% if current_user.is_anonymous %}
-        <a href="{{ url_for('auth.login') }}">登录</a>
-        <p>新用户？ <a href="{{ url_for('auth.register') }}">点击注册</a></p>
-        {% else %}
-        <a href="{{ url_for('auth.logout') }}">登出</a>
-        <p> 登录为 {{ current_user.username }}　</p>
-        {% endif %}
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <ul>
-            {% for message in messages %}
-            <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
-        
-        {% endif %}
-        {% endwith %}
-        {% block content %}
-        {% endblock %}
-        
-    </body>
-</html>
+    </nav>
+
+{% endblock %}
+
+
+
+{% block content %}
+{% endblock %}
