@@ -1,7 +1,6 @@
 from flask import render_template
 
 from app.character import bp
-from app.tools import CHARACTER_INTRO
 
 
 # TODO: make this restful api and add to db
@@ -15,6 +14,7 @@ def character_intros():
 def character_page(character_id):
     data = None
     cis = []
+    # FIXME
     for k in CHARACTER_INTRO:
         cis.extend(CHARACTER_INTRO[k])
     for ci in cis:

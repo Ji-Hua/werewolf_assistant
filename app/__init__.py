@@ -4,16 +4,18 @@ from logging.handlers import SMTPHandler
 from flask import Flask, Blueprint
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from flask_mail import Mail
+from flask_migrate import Migrate
+from flask_mongoengine import MongoEngine
+from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api
 from flask_socketio import SocketIO
 
 from config import config
 
 api = Api()
-db = SQLAlchemy()
+# db = SQLAlchemy()
+db = MongoEngine()
 login = LoginManager()
 # login view should be the right login function
 login.login_view = 'auth.login'
@@ -32,8 +34,6 @@ def create_app(config_name):
     app.config.from_object(config[config_name])
 
     # init components
-    api.init_app(app)
-
     db.init_app(app)
     migrate = Migrate(app, db) # update migrate
 

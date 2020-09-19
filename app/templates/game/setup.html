@@ -7,6 +7,7 @@
         {{ form.hidden_tag() }}
         <p>
             {{ form.template.label }}<br>
+            <p id="template-desc"></p>
             {{ form.template }}<br>
             {% for error in form.template.errors %}
                 <span style="color: red;">[{{ error }}]</span>
@@ -14,4 +15,27 @@
         </p>
         <p>{{ form.submit() }}</p>
     </form>
+    
+    <script>
+        $(document).ready(function(){
+            var template_id = $( "#template option:selected" ).val()
+            $.ajax({
+                type: "GET",
+                url: "/template/" + template_id,
+                success: function(response) {
+                    $("#template-desc").text(response.description)
+                }
+            });
+        });
+        $("select[name='template']").change(function(){
+            var template_id = $( "#template option:selected" ).val()
+            $.ajax({
+                type: "GET",
+                url: "/template/" + template_id,
+                success: function(response) {
+                    $("#template-desc").text(response.description)
+                }
+            });
+        })
+    </script>
 {% endblock %}

@@ -20,8 +20,9 @@
             var request_base = {
                 // tricky: use integer instead of str to be consistent with
                 // backend
-                "user_id": {{ current_user.id }},
-                "room": "{{ room.name }}"
+                "user_id": "{{ current_user.id }}",
+                "room": "{{ game.room_name }}",
+                "token": "{{ token }}",
             }
 
             // Event handler for new connections.
@@ -68,7 +69,7 @@
                     $("#player-status-table-sheriff-" + seat).text(sheriff_value);
                 }
 
-                {% if current_user.is_host(room.name) %}
+                {% if (game.host.id == current_user.id) %}
                     // kill
                     $('.alive-player-row').each(function() {
                         var seat = $(this).data('seat');
@@ -390,7 +391,7 @@
                     $('#info-box').html(campaign_info);
                 } else {
                     $('#player-status-table-sheriff-' + seat).html('')
-                    {% if current_user.is_host(room.name) %}
+                    {% if (game.host.id == current_user.id) %}
                         var sheriffSelectForm = `
                             <form id="sheriff-assignment" action='#'>
                                 <select id='sheriff-select'></select>
@@ -471,11 +472,11 @@
 
         });
     </script>
-    <h1>游戏 {{ room.name }}</h1>
-    <h4>当前游戏设置为 {{ room.game.template }}</h4>
+    <h1>游戏 {{ game.room_name }}</h1>
+    <h3> {{ game.template.description }} </h3>
     <h4>当前游戏阶段为 <span id='game-stage-span'></span> </h4>
     <h4>当前投票状态为 <span id='vote-status-span'>关闭</span> </h4>
-    {% if current_user.is_host(room.name) %}
+    {% if (game.host.id == current_user.id) %}
         <img id="player-character-img" width=128 height=128 src="/static/character_logo/上帝.png">
         <h3>你为本游戏的上帝</h3>
         <div id='host-permenant-actions'>

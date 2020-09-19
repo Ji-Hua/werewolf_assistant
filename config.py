@@ -2,11 +2,13 @@ import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_KEY = "Now it's personal business"
+
+# FIXME: mongodb connection is using production no matter whatever env it is in
 class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or DEFAULT_KEY
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'app.db')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # TODO: remove password from here
+    MONGODB_HOST = os.environ.get('MONGO_DATABASE_URL') or \
+        "mongodb+srv://werewolf-god:thehuntbegins@cluster0.1qpql.mongodb.net/production?retryWrites=true&w=majority"
 
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 25)
@@ -26,14 +28,14 @@ class DevelopmentConfig(Config):
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'app-dev.db')
+    MONGODB_HOST = os.environ.get('MONGO_DATABASE_URL') or \
+        "mongodb+srv://werewolf-god:thehuntbegins@cluster0.1qpql.mongodb.net/development?retryWrites=true&w=majority"
 
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'app-test.db')
+    MONGODB_HOST = os.environ.get('MONGO_DATABASE_URL') or \
+        "mongodb+srv://werewolf-god:thehuntbegins@cluster0.1qpql.mongodb.net/test?retryWrites=true&w=majority"
 
 class ProductionConfig(Config):
     pass

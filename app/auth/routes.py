@@ -29,7 +29,7 @@ def login():
         return redirect(url_for('main.index'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
+        user = User.objects(email=form.email.data).first()
         if user is None or not user.check_password(form.password.data):
             flash('密码或用户名不正确')
             return redirect(url_for('auth.login'))
@@ -49,7 +49,7 @@ def reset_password_request():
         return redirect(url_for('main.index'))
     form = ResetPasswordRequestForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
+        user = User.objects(email=form.email.data).first()
         if user:
             send_password_reset_email(user)
         flash('请查看邮件')
@@ -68,7 +68,7 @@ def reset_password(token):
     form = ResetPasswordForm()
     if form.validate_on_submit():
         user.password = form.password.data
-        db.session.commit()
+        user.save()
         flash('密码已经重置')
         return redirect(url_for('auth.login'))
     return render_template('auth/reset_password.html', form=form)
@@ -87,9 +87,9 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         user = User(username=form.username.data,
-            email=form.email.data, password=form.password.data)
-        db.session.add(user)
-        db.session.commit()
+            email=form.email.data)
+        user.password = form.password.data
+        user.save()
         
         token = user.generate_confirmation_token()
         send_confirmation_email(user)

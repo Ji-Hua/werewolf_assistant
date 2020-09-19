@@ -1,8 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
-from app.models import User, Game
-from app.tools import GAME_TEMPLATES
+from app.models import User, GameTemplate
 
 class LoginForm(FlaskForm):
     email = StringField('电子邮箱', validators=[DataRequired()])
@@ -20,12 +19,12 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField('注册')
 
     def validate_username(self, username):
-        user = User.query.filter_by(username=username.data).first()
+        user = User.objects(username=username.data).first()
         if user is not None:
             raise ValidationError('请使用其他用户名')
 
     def validate_email(self, email):
-        user = User.query.filter_by(email=email.data).first()
+        user = User.objects(email=email.data).first()
         if user is not None:
             raise ValidationError('请使用其他电子邮箱')
 
@@ -37,7 +36,7 @@ class CreateGameForm(FlaskForm):
     
 
 class TemplateForm(FlaskForm):
-    choices = [(key, key) for key in GAME_TEMPLATES.keys()]
+    choices = [(t.name, t.name) for t in GameTemplate.objects()]
     template = SelectField('游戏设置', choices=choices)
     submit = SubmitField('开始游戏')
 

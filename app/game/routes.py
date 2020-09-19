@@ -4,15 +4,19 @@ from urllib.parse import unquote
 
 from flask import render_template, redirect, url_for, request, \
     copy_current_request_context, session
-from flask_login import current_user, login_user, logout_user, login_required
+from flask_login import current_user, login_required
+from flask_restful import Api
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
 
 from app import socketio, db
 from app.forms import TemplateForm
 from app.game import bp
-from app.models import User, Vote, Game, Room, Player
-from app.tools import random_with_n_digits, assign_character, CHARACTER_INTRO
+from app.models import User, Game, Player, GameTemplate
+from app.game.tools import random_with_n_digits, generate_game_token, \
+    check_game_token, check_socketio_message
+from app.game.apis import Template
+
 
 
 @bp.route('/setup', methods=['GET', 'POST'])
@@ -22,26 +26,28 @@ def setup():
     if current_user.is_authenticated:
         if form.validate_on_submit():
             room_name = random_with_n_digits()
-            room = Room(name=room_name)
-            db.session.add(room)
-            db.session.commit()
-            game = Game(template=form.template.data, room_id=room.id)
-            db.session.add(game)
-            player = Player(user_id=current_user.id, room_id=room.id, is_host=True)
-            db.session.add(player)
-            db.session.commit()
-            return redirect(url_for('game.room', room_name=room_name))
+            template = GameTemplate.objects(name=form.template.data).first()
+            game = Game(template=template, room_name=room_name)
+            game.host = User.objects(id=current_user.id).first()
+            game.save()
+
+            return redirect(url_for('game.game', room_name=room_name))
     return render_template('game/setup.html', title='设置游戏', form=form)
 
 
-@bp.route('/room/<room_name>', methods=['GET', 'POST'])
+@bp.route('/game/<room_name>', methods=['GET', 'POST'])
 @login_required
-def room(room_name):
+def game(room_name):
     if current_user.is_authenticated:
-        room = Room.query.filter_by(name=room_name).first()
-        return render_template('game/room.html', title='游戏进行中', room=room)
+        game = Game.objects(room_name=room_name).first()
+        token = generate_game_token(game, current_user)
+        return render_template('game/room.html', title='游戏进行中', game=game, token=token)
     else:
         return redirect(url_for('auth.login'))
+
+# apis
+api = Api(bp)
+api.add_resource(Template, '/template/<template_name>')
 
 # SocketIO apis
 # TODO: Refactor later, need to make emit centralized
@@ -49,31 +55,20 @@ def room(room_name):
 thread = None
 thread_lock = Lock()
 
-# def background_thread():
-#     """Example of how to send server generated events to clients."""
-#     count = 0
-#     while True:
-#         socketio.sleep(10)
-#         count += 1
-#         socketio.emit('my_response',
-#                       {'data': 'Server generated event', 'count': count},
-#                       namespace='/game')
 
 @socketio.on('connect', namespace='/game')
 def test_connect():
-    # global thread
-    # with thread_lock:
-    #     if thread is None:
-    #         thread = socketio.start_background_task(background_thread)
     emit('my_response', {'data': 'Connected', 'count': 0})
 
 @socketio.on('join', namespace='/game')
 def join(message):
-    room_name = message['room']
-    user = User.query.filter_by(id=message['user_id']).first()
-    room = Room.query.filter_by(name=room_name).first()
+    check = check_socketio_message(message)
+    if not check:
+        return False
+    
+    user, game = check
 
-    if room.has_user(user.id):
+    if game.has_user(user.id):
         join_room(room_name) # use room to define room id
 
         # check if user is seated
@@ -141,9 +136,12 @@ def join(message):
 
 @socketio.on('character_assignment', namespace='/game')
 def character_assignment(message):
-    user_id, room_name = message['user_id'], message['room']
-    user = User.query.filter_by(id=user_id).first()
-    room = Room.query.filter_by(name=room_name).first()
+    room_name = message['room_name']
+    user = User.objects(id=message['user_id']).first()
+    game = Game.objects(room_name=room_name).first()
+    if not check_game_token(user, game, message['token']):
+        return False
+
     if user.is_host(room.name):
         if message['fetch_characters']:
             pass
@@ -176,9 +174,12 @@ def character_assignment(message):
 
 @socketio.on('round_assignment', namespace='/game')
 def round_assignment(message):
-    user_id, room_name = message['user_id'], message['room']
-    user = User.query.filter_by(id=user_id).first()
-    room = Room.query.filter_by(name=room_name).first()
+    room_name = message['room_name']
+    user = User.objects(id=message['user_id']).first()
+    game = Game.objects(room_name=room_name).first()
+    if not check_game_token(user, game, message['token']):
+        return False
+
     if user.is_host(room.name):
         room.set_round(message['round_name'])
 
@@ -188,9 +189,12 @@ def round_assignment(message):
 
 @socketio.on('vote_setup', namespace='/game')
 def vote_setup(message):
-    user_id, room_name = message['user_id'], message['room']
-    user = User.query.filter_by(id=user_id).first()
-    room = Room.query.filter_by(name=room_name).first()
+    room_name = message['room_name']
+    user = User.objects(id=message['user_id']).first()
+    game = Game.objects(room_name=room_name).first()
+    if not check_game_token(user, game, message['token']):
+        return False
+
     if user.is_host(room.name):
         if message['allow_vote']:
             room.allow_votes()
@@ -218,9 +222,12 @@ def vote_setup(message):
 
 @socketio.on('vote_for', namespace='/game')
 def vote_for(message):
-    user_id, room_name = message['user_id'], message['room']
-    user = User.query.filter_by(id=user_id).first()
-    room = Room.query.filter_by(name=room_name).first()
+    room_name = message['room_name']
+    user = User.objects(id=message['user_id']).first()
+    game = Game.objects(room_name=room_name).first()
+    if not check_game_token(user, game, message['token']):
+        return False
+
     if room.has_user(user.id):
         role = user.current_role(room.name)
         if role.capable_for_vote:

@@ -1,0 +1,56 @@
+import json
+import os
+import random
+
+from flask import current_app
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+import jwt
+
+from app.models import Game, User
+
+GAME_ID_LENGTH = 4
+
+def random_with_n_digits(n=GAME_ID_LENGTH):
+    range_start = 10**(n-1)
+    range_end = (10**n)-1
+    return str(random.randint(range_start, range_end))
+
+
+def generate_game_token(user, game, expiration=21600):
+    serializer = Serializer(current_app.config['SECRET_KEY'], expiration)
+    raw_token_json = ({'user_id': str(user.id), 'game': str(game.id)})
+    return serializer.dumps(raw_token_json)
+
+
+def check_game_token(user, game, token):
+    serializer = Serializer(current_app.config['SECRET_KEY'])
+    try:
+        data = serializer.loads(token)
+    except:
+        return False
+    if data.get('user_id') != str(user.id):
+        return False
+    if data.get('game_id') != str(game.id):
+        return False
+    return True
+
+def check_socketio_message(message):
+    room_name = message['room_name']
+    user = User.objects(id=message['user_id']).first()
+    game = Game.objects(room_name=room_name).first()
+    if not check_game_token(user, game, message['token']):
+        return False
+    else:
+        return (user, game)
+
+def check_host(game, player):
+    return game.host == player
+
+# def build_character_queue(template_name):
+#     queue = []
+#     character_dict = GAME_TEMPLATES[template_name]
+#     for key, value in character_dict.items():
+#         for _ in range(value):
+#             queue.append(key)
+#     random.shuffle(queue)
+#     return queue
