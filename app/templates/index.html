@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>欢迎 {{ current_user.username }} </h1>
     <p>请选择你的行动</p>
     <form action="" method="post">
         {{ form.csrf_token }}

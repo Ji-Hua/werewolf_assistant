@@ -73,3 +73,18 @@ table, th, td {
     align-items: center;
     justify-content: center;
 }
+
+.logo {
+    width: 100px;
+    height: 100px;
+}
+
+.navbar .navbar-nav {
+    display: inline-block;
+    float: none;
+    vertical-align: top;
+  }
+  
+  .navbar {
+    text-align: center;
+  }

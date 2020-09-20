@@ -6,9 +6,9 @@
         {{ form.csrf_token }}
         {{ form.hidden_tag() }}
         <p>
-            {{ form.username.label }}<br>
-            {{ form.username(size=32) }}<br>
-            {% for error in form.username.errors %}
+            {{ form.email.label }}<br>
+            {{ form.email(size=32) }}<br>
+            {% for error in form.email.errors %}
             <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>
@@ -21,8 +21,12 @@
         </p>
         <p>{{ form.submit() }}</p>
         <p>
+            {{ form.remember_me}}
+            {{ form.remember_me.label}}
+        </p>
+        <p>
             忘记密码？
-            <a href="{{ url_for('reset_password_request') }}">点击此处重置</a>
+            <a href="{{ url_for('auth.reset_password_request') }}">点击此处重置</a>
         </p>
     </form>
 {% endblock %}
