@@ -150,22 +150,22 @@ def character_assignment(message):
             pass
         else:
             if message['assign_characters']:
-                room.assign_characters()
+                game.assign_characters()
                 # broadcast update
                 emit('character_status', {
-                    'locked': room.game.character_locked,
+                    'locked': game.character_locked,
                 }, room=game.room_name)
             else:
-                success = room.lock_characters()
+                success = game.lock_characters()
                 emit('character_status', {
-                    'locked': room.game.character_locked,
+                    'locked': game.character_locked,
                 }, room=game.room_name)
 
-            data = {'data': room.description, 'locked': room.game.character_locked}
+            data = {'data': game.description, 'locked': game.character_locked}
             emit('game_status', data, room=game.room_name)
-            emit('characters', {'characters': room.player_characters(user)})
+            emit('characters', {'characters': game.player_characters(user)})
     else:
-        role = user.current_role(room.name)
+        role = game.current_player_of(user.id)
         your_character = role.character or '等待分发'
         file_name = f"character_logo/{your_character}.png"
         chracter_url = unquote(url_for('static', filename=file_name))
@@ -184,10 +184,10 @@ def round_assignment(message):
         return False
 
     if game.has_user(user.id):
-        room.set_round(message['round_name'])
+        game.set_round(message['round_name'])
 
     session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('game_stage', {'stage': room.round}, room=game.room_name)
+    emit('game_stage', {'stage': game.round}, room=game.room_name)
 
 
 @socketio.on('vote_setup', namespace='/game')
@@ -200,17 +200,17 @@ def vote_setup(message):
 
     if game.has_user(user.id):
         if message['allow_vote']:
-            room.allow_votes()
+            game.allow_votes()
             emit('vote_status', {
-                'vote_status': room.vote_status,
-                'player_vote_status': room.player_vote_status,
-                'candidates': room.vote_candidates
+                'vote_status': game.vote_status,
+                'player_vote_status': game.player_vote_status,
+                'candidates': game.vote_candidates
             }, room=game.room_name)
         else:
-            room.disable_votes()
-            results = room.view_vote_results(room.round)
+            game.disable_votes()
+            results = game.view_vote_results(game.round)
             emit('vote_status', {
-                'vote_status': room.vote_status,
+                'vote_status': game.vote_status,
                 }, room=game.room_name)
             
             # NOTE: prettify vote results
@@ -232,7 +232,7 @@ def vote_for(message):
         return False
 
     if game.has_user(user.id):
-        role = user.current_role(room.name)
+        role = game.current_player_of(user.id)
         if role.capable_for_vote:
             check = role.vote_for(message['vote_for'])
             if check[0]:
@@ -275,16 +275,16 @@ def campaign_setup(message):
     user, game = check
     if game.has_user(user.id):
         if message['allow_campaign']:
-            room.set_round("警长竞选")
-            room.allow_campaign()
+            game.set_round("警长竞选")
+            game.allow_campaign()
         else:
-            room.set_round("警长竞选")
-            room.disable_campaign()
+            game.set_round("警长竞选")
+            game.disable_campaign()
         emit('campaign_status', {
-            'campaign_status': room.campaign_status,
+            'campaign_status': game.campaign_status,
         }, room=game.room_name)
 
-        emit('campaign_candidates', room.campaign_players, room=game.room_name)
+        emit('campaign_candidates', game.campaign_players, room=game.room_name)
 
 
 @socketio.on('sheriff_campaign', namespace='/game')
@@ -295,7 +295,7 @@ def sheriff_campaign(message):
     
     user, game = check
     if game.has_user(user.id):
-        role = user.current_role(room.name)
+        role = game.current_player_of(user.id)
         # Only allow seated players to vote
         if role.is_seated:
             # campaign = True means in campaign
@@ -312,7 +312,7 @@ def sheriff_campaign(message):
                     'seat': role.seat, 
                     'success': success
                 })
-        emit('campaign_candidates', room.campaign_players, room=game.room_name)
+        emit('campaign_candidates', game.campaign_players, room=game.room_name)
 
 
 @socketio.on('sheriff_badge', namespace='/game')
@@ -324,14 +324,14 @@ def sheriff_badge(message):
     user, game = check
     if game.has_user(user.id):
         seat = message['seat']
-        success = room.set_sheriff(seat)
+        success = game.set_sheriff(seat)
         emit('badge_status', {
             'success': success,
-            'sheriff': room.sheriff
+            'sheriff': game.sheriff
         })
 
         # update sheriff by emitting game_status
-        data = {'data': room.description, 'locked': room.game.character_locked}
+        data = {'data': game.description, 'locked': game.character_locked}
         emit('game_status', data, room=game.room_name)
 
 
@@ -345,16 +345,16 @@ def player_death(message):
     if game.has_user(user.id):
         seat = message['seat']
         if message['method'] == '复活':
-            success = room.revive(seat)
+            success = game.revive(seat)
         else:
-            success = room.kill(seat, method=message['method'])
+            success = game.kill(seat, method=message['method'])
         emit('death_status', {
             'success': success,
             'seat': seat
         })
 
         # update sheriff by emitting game_status
-        data = {'data': room.description, 'locked': room.game.character_locked}
+        data = {'data': game.description, 'locked': game.character_locked}
         emit('game_status', data, room=game.room_name)
 
 
