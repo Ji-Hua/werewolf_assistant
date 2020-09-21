@@ -8,7 +8,7 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or DEFAULT_KEY
     # TODO: remove password from here
     MONGODB_HOST = os.environ.get('MONGO_DATABASE_URL') or \
-        "mongodb+srv://werewolf-god:thehuntbegins@cluster0.1qpql.mongodb.net/production?retryWrites=true&w=majority"
+        "mongodb+srv://werewolf-god:password@cluster0.1qpql.mongodb.net/production?retryWrites=true&w=majority"
 
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 25)
