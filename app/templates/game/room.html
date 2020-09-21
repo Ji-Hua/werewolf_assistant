@@ -21,7 +21,7 @@
                 // tricky: use integer instead of str to be consistent with
                 // backend
                 "user_id": "{{ current_user.id }}",
-                "room": "{{ game.room_name }}",
+                "room_name": "{{ game.room_name }}",
                 "token": "{{ token }}",
             }
 
@@ -168,7 +168,7 @@
             window.setInterval(function() {
                 start_time = (new Date).getTime();
                 socket.emit('my_ping');
-            }, 3000);
+            }, 10000);
 
             // Handler for the "pong" message. When the pong is received, the
             // time from the ping is stored, and the average of the last 30

@@ -1,5 +1,4 @@
-from flask import render_template, flash, redirect, url_for, request, \
-    jsonify, copy_current_request_context, session
+from flask import render_template, flash, redirect, url_for, abort
 from flask_login import current_user, login_required
 
 from werkzeug.urls import url_parse
@@ -7,7 +6,7 @@ from werkzeug.urls import url_parse
 from app import db, login
 from app.forms import CreateGameForm
 from app.main import bp
-from app.models import User, Game
+from app.models import User, Game, Player
 
 @bp.route('/', methods=['GET', 'POST'])
 @bp.route('/index', methods=['GET', 'POST'])
@@ -20,13 +19,20 @@ def index():
                 next_page = url_for('game.setup')
                 return redirect(next_page)
             if form.enter_game.data:
-                # TODO: should validate room_name here
-                # room = Room.query.filter_by(name=form.room_name.data).first()
-                # player = Player(user_id=current_user.id, room_id=room.id, is_host=False)
-                # db.session.add(player)
-                # db.session.commit()
-                next_page = url_for('game.game', room_name=form.room_name.data)
-            return redirect(next_page)
+                room_name = str(form.room_name.data)
+                games = Game.objects(room_name=room_name)
+                if games:
+                    game = games.first()
+                    # TODO: should move this to models
+                    if not Player.objects(user=current_user.id, game=game):
+                        player = Player(user=current_user.id, game=game).save()
+                        game.audience.append(player)
+                        game.save()
+                    next_page = url_for('game.game', room_name=room_name)
+                    return redirect(next_page)
+                else:
+                    abort(404, f"并未找到名为{room_name}的房间，请确认房间名称正确") 
+            
         
     return render_template('index.html', title='首页', form=form)
 
@@ -34,8 +40,8 @@ def index():
 # TODO: add logging and email
 @bp.app_errorhandler(404)
 def page_not_found(e):
-    return render_template('errors/404.html'), 404
+    return render_template('errors/404.html', error=e), 404
 
 @bp.app_errorhandler(500)
 def internal_server_error(e):
-    return render_template('errors/500.html'), 500
+    return render_template('errors/500.html', error=e), 500

@@ -1,10 +1,9 @@
-import json
-import os
+from collections import defaultdict
+import pdb
 import random
 
 from flask import current_app
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-import jwt
+from itsdangerous.url_safe import URLSafeTimedSerializer as Serializer
 
 from app.models import Game, User
 
@@ -16,9 +15,9 @@ def random_with_n_digits(n=GAME_ID_LENGTH):
     return str(random.randint(range_start, range_end))
 
 
-def generate_game_token(user, game, expiration=21600):
-    serializer = Serializer(current_app.config['SECRET_KEY'], expiration)
-    raw_token_json = ({'user_id': str(user.id), 'game': str(game.id)})
+def generate_game_token(user, game):
+    serializer = Serializer(current_app.config['SECRET_KEY'])
+    raw_token_json = ({'user_id': str(user.id), 'game_id': str(game.id)})
     return serializer.dumps(raw_token_json)
 
 
@@ -42,9 +41,6 @@ def check_socketio_message(message):
         return False
     else:
         return (user, game)
-
-def check_host(game, player):
-    return game.host == player
 
 # def build_character_queue(template_name):
 #     queue = []
