@@ -29,13 +29,13 @@ class DevelopmentConfig(Config):
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MONGODB_HOST = os.environ.get('MONGO_DATABASE_URL') or \
-        "mongodb+srv://werewolf-god:thehuntbegins@cluster0.1qpql.mongodb.net/development?retryWrites=true&w=majority"
+        "mongodb+srv://werewolf-god:password@cluster0.1qpql.mongodb.net/development?retryWrites=true&w=majority"
 
 
 class TestingConfig(Config):
     TESTING = True
     MONGODB_HOST = os.environ.get('MONGO_DATABASE_URL') or \
-        "mongodb+srv://werewolf-god:thehuntbegins@cluster0.1qpql.mongodb.net/test?retryWrites=true&w=majority"
+        "mongodb+srv://werewolf-god:password@cluster0.1qpql.mongodb.net/test?retryWrites=true&w=majority"
 
 class ProductionConfig(Config):
     pass
