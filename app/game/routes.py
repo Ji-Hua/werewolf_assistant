@@ -1,5 +1,3 @@
-from collections import defaultdict
-import pdb
 from threading import Lock
 from urllib.parse import unquote
 
@@ -7,7 +5,7 @@ from flask import render_template, redirect, url_for, request, \
     copy_current_request_context, session
 from flask_login import current_user, login_required
 from flask_restful import Api
-from flask_socketio import SocketIO, emit, join_room, leave_room, \
+from flask_socketio import emit, join_room, leave_room, \
     close_room, rooms, disconnect
 
 from app import socketio, db

@@ -1,5 +1,6 @@
-from flask import render_template
+from flask import render_template, abort
 
+from app.models import Character
 from app.character import bp
 
 
@@ -8,18 +9,13 @@ from app.character import bp
 # character in admin view
 @bp.route('/character_intros')
 def character_intros():
-    return render_template('character/characters.html', characters=CHARACTER_INTRO)
+    characters = Character.objects()
+    return render_template('character/characters.html', characters=characters)
 
 @bp.route('/character_page/<character_id>', methods=['GET'])
 def character_page(character_id):
-    data = None
-    cis = []
-    # FIXME
-    for k in CHARACTER_INTRO:
-        cis.extend(CHARACTER_INTRO[k])
-    for ci in cis:
-        if ci['id'] == character_id:
-            data = ci
-            return render_template('character/character_page.html', data=data)
+    character = Character.objects(id=character_id).first()
+    if character:
+        return render_template('character/character_page.html', character=character)
     else:
-        raise ValueError("No such character")
+        abort(404, "这个角色不存在")

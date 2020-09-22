@@ -36,8 +36,7 @@
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav navbar-left">
                 <li class='nav-item'><a href="{{ url_for('main.index') }}" class='nounderline'>首页</a></li>
-                {# note: commented-out template because we no longer use this
-                <li class='nav-item'><a href="{{ url_for('character.character_intros') }}">角色</a></li> #}
+                <li class='nav-item'><a href="{{ url_for('character.character_intros') }}">角色</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <p class="navbar-text">登录为 {{ current_user.username }}</p>
