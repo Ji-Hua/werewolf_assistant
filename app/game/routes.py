@@ -161,7 +161,8 @@ def character_assignment(message):
 
             data = {'data': game.description, 'locked': game.character_locked}
             emit('game_status', data, room=game.room_name)
-            emit('characters', {'characters': game.player_characters(user)})
+            print(game.player_characters(user.id))
+            emit('characters', {'characters': game.player_characters(user.id)})
     else:
         role = game.current_player_of(user.id)
         your_character = role.character or '等待分发'
@@ -254,6 +255,8 @@ def sit_down(message):
         seat = int(message['seat'])
         success = role.sit_at(seat)
         if success:
+            game.reload()
+            role.reload()
             emit('available_seats', {'seats': game.available_seats}, room=audience_room_name)
             leave_room(audience_room_name)
             emit('seated', {'seat': role.seat})

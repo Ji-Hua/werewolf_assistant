@@ -41,12 +41,3 @@ def check_socketio_message(message):
         return False
     else:
         return (user, game)
-
-# def build_character_queue(template_name):
-#     queue = []
-#     character_dict = GAME_TEMPLATES[template_name]
-#     for key, value in character_dict.items():
-#         for _ in range(value):
-#             queue.append(key)
-#     random.shuffle(queue)
-#     return queue

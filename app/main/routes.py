@@ -10,6 +10,8 @@ from app.models import User, Game, Player
 
 @bp.route('/', methods=['GET', 'POST'])
 @bp.route('/index', methods=['GET', 'POST'])
+# TODO: this should not require login
+# make game a seperate module
 @login_required
 def index():
     form = CreateGameForm()
@@ -26,8 +28,7 @@ def index():
                     # TODO: should move this to models
                     if not Player.objects(user=current_user.id, game=game):
                         player = Player(user=current_user.id, game=game).save()
-                        game.audience.append(player)
-                        game.save()
+                        game.add_audience(player)
                     next_page = url_for('game.game', room_name=room_name)
                     return redirect(next_page)
                 else:

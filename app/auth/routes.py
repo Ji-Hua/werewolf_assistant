@@ -1,12 +1,7 @@
-import time
-from urllib.parse import unquote
-
-from flask import render_template, flash, redirect, url_for, request, \
-    jsonify, copy_current_request_context, session, Blueprint
+from flask import render_template, flash, redirect, url_for, request
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
 
-from app import db
 from app.auth.email import send_password_reset_email, send_confirmation_email
 from app.forms import (LoginForm, RegistrationForm, 
     ResetPasswordRequestForm, ResetPasswordForm)
@@ -91,7 +86,6 @@ def register():
         user.password = form.password.data
         user.save()
         
-        token = user.generate_confirmation_token()
         send_confirmation_email(user)
         flash('确认邮件已发送至您的邮箱，请点击其中链接完成注册')
         return redirect(url_for('main.index'))
