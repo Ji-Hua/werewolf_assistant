@@ -1,13 +1,11 @@
 import logging
 from logging.handlers import SMTPHandler
 
-from flask import Flask, Blueprint
+from flask import Flask
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager
 from flask_mail import Mail
-from flask_migrate import Migrate
 from flask_mongoengine import MongoEngine
-from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api
 from flask_socketio import SocketIO
 
@@ -35,7 +33,6 @@ def create_app(config_name):
 
     # init components
     db.init_app(app)
-    migrate = Migrate(app, db) # update migrate
 
     login.init_app(app)
 
