@@ -550,4 +550,3 @@ class Vote(db.Model):
     def vote_from(self):
         vote_from = Player.query.filter_by(id=self.player_id).first().seat
         return vote_from
-
