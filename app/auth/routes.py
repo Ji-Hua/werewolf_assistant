@@ -57,8 +57,9 @@ def reset_password_request():
 def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
-    user = User.verify_reset_password_token(token)
+    user = User.query_user_by_reset_password_token(token)
     if not user:
+        flash('重置密码不成功，请确定你的链接正确')
         return redirect(url_for('main.index'))
     form = ResetPasswordForm()
     if form.validate_on_submit():

@@ -12,6 +12,8 @@ from app import db, login
 
 class User(UserMixin, db.Document):
     # TODO: Add game related documents
+    # TODO: should make query like user.find_by_id as a method in order to
+    # decouple db from model
     email = db.EmailField(required=True, unique=True, null=False)
     username = db.StringField(required=True, unique=True, null=False)
     password_hash = db.StringField(required=True)
@@ -27,40 +29,47 @@ class User(UserMixin, db.Document):
     @password.setter
     def password(self, password):
         self.password_hash = generate_password_hash(password)
-    
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
     def generate_confirmation_token(self, expiration=3600):
         serializer = Serializer(current_app.config['SECRET_KEY'], expiration)
-        return serializer.dumps({'confirm': str(self.id)})
-
-    def confirm(self, token):
+        return serializer.dumps({'email': str(self.email)})
+    
+    def verify_confirmation_token(self, token):
         serializer = Serializer(current_app.config['SECRET_KEY'])
         try:
             data = serializer.loads(token)
         except:
             return False
-        if data.get('confirm') != str(self.id):
+        if data.get('email') != str(self.email):
             return False
-
-        self.confirmed = True
-        self.save()
         return True
 
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+    def confirm(self, token):
+        if self.verify_confirmation_token(token):
+            self.confirmed = True
+            self.save()
+        return self.confirmed
     
-    def get_reset_password_token(self, expires_in=600):
-        return jwt.encode(
-            {'reset_password': str(self.id), 'exp': time() + expires_in},
-            current_app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
-    
+    def generate_reset_password_token(self, expiration=600):
+        serializer = Serializer(current_app.config['SECRET_KEY'], expiration)
+        return serializer.dumps({'reset_password': str(self.email)})
+
     @staticmethod
-    def verify_reset_password_token(token):
+    def read_reset_password_token(token):
+        serializer = Serializer(current_app.config['SECRET_KEY'])
         try:
-            id = jwt.decode(token, current_app.config['SECRET_KEY'],
-                            algorithms=['HS256'])['reset_password']
+            email = serializer.loads(token)['reset_password']
         except:
             return
-        return User.query.get(id)
+        return email
+
+    @staticmethod
+    def query_user_by_reset_password_token(token):
+        data = User.read_reset_password_token(token)
+        return data and User.objects(email=data).first()
 
 
 # NOTE: Flask-login needs a callback function to load user

@@ -38,13 +38,33 @@ class UserModelTestCase(unittest.TestCase):
         u2 = User()
         u2.password = 'werewolf'
         self.assertTrue(u.password_hash != u2.password_hash)
-    
+
     def test_generate_confirmation_token(self):
         u = User()
         self.assertFalse(u.generate_confirmation_token() is None)
 
-    def test_confirm_works_correctly(self):
-        u = User()
+    def test_verify_confirmation_token(self):
+        u = User(username='someone', email='someone@example.com')
         token = u.generate_confirmation_token()
-        u.confirm(token)
-        self.assertTrue(u.confirmed)
+        self.assertTrue(u.verify_confirmation_token(token))
+
+    def test_verify_confirmation_token_with_false_token(self):
+        u = User(username='someone', email='someone@example.com')
+        token = u.generate_confirmation_token()
+        u2 = User(username='someone_else', email='someone_else@example.com')
+        self.assertFalse(u2.verify_confirmation_token(token))
+
+    def test_generate_reset_password_token(self):
+        u = User(username='someone', email='someone@example.com')
+        token = u.generate_reset_password_token()
+        self.assertFalse(token is None)
+
+    def test_read_reset_password_token(self):
+        u = User(username='someone', email='someone@example.com')
+        token = u.generate_reset_password_token()
+        self.assertEqual(User.read_reset_password_token(token), 'someone@example.com')
+
+    def test_read_reset_password_token_return_none_if_wrong_token(self):
+        u = User(username='someone', email='someone@example.com')
+        token = u.generate_confirmation_token()
+        self.assertTrue(User.read_reset_password_token(token) is None)

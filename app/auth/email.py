@@ -31,7 +31,7 @@ def send_confirmation_email(user):
 
 
 def send_password_reset_email(user):
-    token = user.get_reset_password_token()
+    token = user.generate_reset_password_token()
     send_email('[烂柯游艺社] 重置密码',
                sender=current_app.config['MAIL_USERNAME'],
                recipients=[user.email],
