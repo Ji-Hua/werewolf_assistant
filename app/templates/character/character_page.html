@@ -7,24 +7,30 @@
     <div class="row">
         <div class="col-lg">
             <img class="character-img border" id="character-logo"
-            src="{{url_for('static', filename='character_logo/' + data['名字'] + '.png')}}"
+            src="{{url_for('static', filename='character_logo/' + character['名字'] + '.png')}}"
             width=256 height=256>
         </div>
     
     <div class="col-lg">
-        <h4>{{data['名字']}}</h4>
+        <h4>{{character['名字']}}</h4>
         <p>
-            {% for s in data['归属'] %}
+            {% for s in character['阵营'] %}
             {{s}} 
             {% endfor %}
         </p>
-        {% for s in data['技能'] %}
+        {% if character['技能'] %}
+        {% for s in character['技能'] %}
         <p>【</span>{{s['名称']}}</span>】  {{s['说明']}}</p>
         {% endfor %}
+        {% endif %}
         <br>
-        <p></span id='line-note'>{{data['台词']}}</span></p>
+        {% if character['背景'] %}
+        <p></span id='line-note'>{{character['背景']}}</span></p>
+        {% endif %}
         <br>
-        <p></span id='span-note'>{{data['注释']}}</span></p>
+        {% if character['注释'] %}
+        <p></span id='span-note'>{{character['注释']}}</span></p>
+        {% endif %}
     </div>
     </div>
     
