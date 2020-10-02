@@ -25,11 +25,14 @@
         {% endif %}
         <br>
         {% if character['背景'] %}
-        <p></span id='line-note'>{{character['背景']}}</span></p>
+        <p></span id='line-background'>{{character['背景']}}</span></p>
         {% endif %}
         <br>
         {% if character['注释'] %}
         <p></span id='span-note'>{{character['注释']}}</span></p>
+        {% endif %}
+        {% if character['台词'] %}
+        <p></span id='span-plot'>{{character['台词']}}</span></p>
         {% endif %}
     </div>
     </div>
