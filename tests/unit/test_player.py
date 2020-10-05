@@ -1,10 +1,11 @@
+from app.domain import player
 import pytest
 
 from app.domain import Player, Vote
 
 
 def test_player_create_correctly():
-    player = Player()
+    player = Player('Player1')
     assert player.seat == 0 and (not player.is_seated)
     assert (not player.is_dead) and player.death_status == '存活'
     assert (not player.is_candidate) and (not player.capable_to_vote)
@@ -13,7 +14,7 @@ def test_player_create_correctly():
 
 
 def test_player_could_sit():
-    player = Player()
+    player = Player('Player1')
     valid_seats = list(range(1, 13))
     player.sit_at(4, valid_seats=valid_seats)
     assert player.seat == 4 and player.is_seated
@@ -27,7 +28,7 @@ def test_player_could_not_sit_when_seated(seated_player):
 
 def test_player_could_not_sit_at_wrong_seat():
     valid_seats = [1, 3, 5]
-    player = Player()
+    player = Player('Player1')
     with pytest.raises(ValueError):
         player.sit_at(2, valid_seats=valid_seats)
 
@@ -39,7 +40,7 @@ def test_player_could_stand_up(seated_player):
 
 
 def test_player_cannot_stand_up_if_not_seated():
-    player = Player()
+    player = Player('Player1')
     with pytest.raises(ValueError):
         player.stand_up()
 
@@ -145,6 +146,11 @@ def test_player_cannot_vote_for_sheriff_in_campaign(seated_player):
     assert seated_player.capable_to_vote
 
 
+def test_player_could_accept_character_correctly(seated_player):
+    seated_player.accept_character('预言家')
+    assert seated_player.character == '预言家'
+
+
 def test_dead_player_will_raise(dead_player):
     with pytest.raises(ValueError):
         dead_player.set_dead('死亡')
@@ -186,6 +192,9 @@ def test_audience_player_will_raise(audience_player):
     
     with pytest.raises(ValueError):
         audience_player.enable_vote()
+    
+    with pytest.raises(ValueError):
+        audience_player.accept_character('预言家')
     
     with pytest.raises(ValueError):
         stage = "警长竞选"

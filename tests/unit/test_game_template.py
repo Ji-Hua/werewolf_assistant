@@ -58,12 +58,22 @@ def test_templates_with_different_characters_are_different():
     assert t1 != t2
 
 
-def test_template_raises_value_error_if_player_number_not_match():
+def test_template_player_number_match():
     # 13 characters
     characters = {"预言家": 1, "女巫": 1, "猎人": 1, "白痴": 1, 
         "狼人": 4, "村民": 4, "混血儿": 1}
-    with pytest.raises(ValueError):
-        GameTemplate('name', characters)
+    assert GameTemplate('name', characters).player_number == sum(characters.values())
+
+
+def test_template_description_is_correct():
+    characters = {"预言家": 1, "女巫": 1, "猎人": 1, "狼人": 3,
+        "村民": 2, "混血儿": 1}
+    template = GameTemplate('测试', characters)
+    text = template.description
+    assert "测试 (9 人):" in text
+    assert "预言家x1" in text
+    assert "狼人x3" in text
+    assert "混血儿x1" in text
 
 
 def test_template_could_shuffle_characters_correctly():

@@ -5,10 +5,13 @@ from .vote import Vote
 
 class Player:
 
-    def __init__(self):
+    def __init__(self, ref):
         # seat = 0 means audience
+        self.ref = ref
         self.seat = 0
         self.is_seated = False
+
+        self.character = None
 
         # death related
         # death_status could be 存活，死亡（夜间死亡）, 放逐(白天公投), 自爆，枪杀，决斗，殉情
@@ -24,6 +27,14 @@ class Player:
         self.is_candidate = False
         self.capable_to_vote = False
         self._votes = {}  # dictionary of Vote
+    
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return self.ref == other.ref
+    
+    def __repr__(self):
+        return f"<Player: {self.ref}>"
 
     @property
     def death_status(self):
@@ -129,3 +140,9 @@ class Player:
     def disable_vote(self):
         self._check_seated_and_alive()
         self.capable_to_vote = False
+    
+    def accept_character(self, character: str):
+        if self.is_seated:
+            self.character = character
+        else:
+            raise ValueError('Player not seated')
