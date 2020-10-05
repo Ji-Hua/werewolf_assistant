@@ -1,6 +1,6 @@
 import pytest
 
-from app.domain.models import GameTemplate, Player
+from app.domain import Game, GameTemplate, Player
 
 
 @pytest.fixture
@@ -16,6 +16,12 @@ def game_template():
         "混血儿": 1
     }
     return GameTemplate(name=name, characters=characters)
+
+@pytest.fixture
+def prepared_game():
+    game = Game(name='1234', template=game_template)
+    game.character_assigned = True
+    return game
 
 
 @pytest.fixture

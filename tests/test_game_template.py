@@ -1,6 +1,6 @@
 import pytest
 
-from app.domain.models import GameTemplate
+from app.domain import GameTemplate
 
 
 def test_template_could_create_correctly():

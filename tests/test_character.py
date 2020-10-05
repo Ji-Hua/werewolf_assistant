@@ -1,4 +1,4 @@
-from app.domain.models import Character, Skill
+from app.domain import Character, Skill
 
 
 def test_character_has_name_and_camp():

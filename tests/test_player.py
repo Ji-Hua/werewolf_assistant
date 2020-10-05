@@ -1,7 +1,6 @@
-from tests.conftest import audience_player, dead_player, seated_player
 import pytest
 
-from app.domain.models import Player
+from app.domain import Player, Vote
 
 
 def test_player_create_correctly():
@@ -91,8 +90,59 @@ def test_player_cannot_quit_campaign_unless_campaigned(seated_player):
         seated_player.quit_campaign()
 
 
-def test_player_could_vote(seated_player):
-    pass
+def test_player_cannot_vote_unless_enabled(seated_player):
+    with pytest.raises(ValueError):
+        stage = "警长竞选"
+        candidates = [1, 2, 3, 4]
+        seated_player.vote(target=1, stage=stage, candidates=candidates)
+
+
+def test_player_vote_correctly_at_regular_stage(seated_player):
+    stage = "警长竞选"
+    candidates = [1, 2, 3, 4]
+    seated_player.enable_vote()
+    seated_player.vote(target=1, stage=stage, candidates=candidates)
+    vote = Vote(vote_from=seated_player.seat, vote_for=1)
+    assert seated_player.check_vote(stage) == vote
+    seated_player.disable_vote()
+    with pytest.raises(ValueError):
+        seated_player.vote(target=1, stage=stage, candidates=candidates)
+
+
+def test_player_cannot_vote_for_sheriff_in_campaign(seated_player):
+    seated_player.attend_campaign()
+    seated_player.enable_vote(is_campaign=True)
+    assert not seated_player.capable_to_vote
+    seated_player.enable_vote(is_campaign=True, is_pk=True)
+    assert not seated_player.capable_to_vote
+    
+
+def test_player_could_abstain_in_vote(seated_player):
+    stage = "警长竞选"
+    candidates = [1, 2, 3, 4]
+    target = 0
+    seated_player.enable_vote()
+    seated_player.vote(target, stage, candidates)
+    vote = Vote(vote_from=seated_player.seat, vote_for=target)
+    assert seated_player.check_vote(stage) == vote
+
+
+def test_player_vote_treated_as_abstention_if_invalid(seated_player):
+    stage = "警长竞选"
+    candidates = [1, 2, 3, 4]
+    seated_player.enable_vote()
+    seated_player.vote(5, stage, candidates)
+    vote = Vote(vote_from=seated_player.seat, vote_for=0)
+    assert seated_player.check_vote(stage) == vote
+
+
+def test_player_cannot_vote_for_sheriff_in_campaign(seated_player):
+    seated_player.attend_campaign()
+    seated_player.quit_campaign()
+    seated_player.enable_vote(is_campaign=True)
+    assert not seated_player.capable_to_vote
+    seated_player.enable_vote(is_campaign=False)
+    assert seated_player.capable_to_vote
 
 
 def test_dead_player_will_raise(dead_player):
@@ -107,6 +157,14 @@ def test_dead_player_will_raise(dead_player):
     
     with pytest.raises(ValueError):
         dead_player.quit_campaign()
+    
+    with pytest.raises(ValueError):
+        dead_player.enable_vote()
+    
+    with pytest.raises(ValueError):
+        stage = "警长竞选"
+        candidates = [1, 2, 3, 4]
+        dead_player.vote(target=1, stage=stage, candidates=candidates)
 
 
 
@@ -125,4 +183,11 @@ def test_audience_player_will_raise(audience_player):
     
     with pytest.raises(ValueError):
         audience_player.quit_campaign()
-
+    
+    with pytest.raises(ValueError):
+        audience_player.enable_vote()
+    
+    with pytest.raises(ValueError):
+        stage = "警长竞选"
+        candidates = [1, 2, 3, 4]
+        audience_player.vote(target=1, stage=stage, candidates=candidates)
