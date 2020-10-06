@@ -29,7 +29,7 @@ class Player:
         self._votes = {}  # dictionary of Vote
     
     def __eq__(self, other):
-        if other is None:
+        if not isinstance(other, Player):
             return False
         return self.ref == other.ref
     

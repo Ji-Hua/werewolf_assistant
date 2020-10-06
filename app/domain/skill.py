@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 class Skill(NamedTuple):
     name: str
-    intro: str
+    introduction: str
 
     def __repr__(self):
-        return f"{self.name}: {self.intro}"
+        return f"{self.name}: {self.introduction}"
