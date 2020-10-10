@@ -13,7 +13,7 @@ import jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import db, login
-
+from .tools import GAME_TEMPLATES
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -108,6 +108,11 @@ class Room(db.Model):
     def __repr__(self):
         return f"{self.name}: {self.game.template}"
     
+    @property
+    def characters(self):
+        template = GAME_TEMPLATES[self.game.template]
+        return template
+
     @property
     def round(self):
         return self.game.current_round
