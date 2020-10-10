@@ -12,7 +12,7 @@ from app import socketio, db
 from app.forms import TemplateForm
 from app.game import bp
 from app.models import User, Vote, Game, Room, Player
-from app.tools import random_with_n_digits, assign_character, CHARACTER_INTRO
+from app.tools import random_with_n_digits
 
 
 @bp.route('/setup', methods=['GET', 'POST'])

@@ -473,6 +473,12 @@
     </script>
     <h1>游戏 {{ room.name }}</h1>
     <h4>当前游戏设置为 {{ room.game.template }}</h4>
+    <p>
+        {% for name, count in room.characters.items() %}
+        <a href="{{ '../character_page/' + name|string }}">{{ name }}</a>x{{count}}   
+        {% endfor %}
+
+    </p>
     <h4>当前游戏阶段为 <span id='game-stage-span'></span> </h4>
     <h4>当前投票状态为 <span id='vote-status-span'>关闭</span> </h4>
     {% if current_user.is_host(room.name) %}

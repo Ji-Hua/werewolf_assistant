@@ -7,16 +7,50 @@
     <div class="row">
         {% for c in characters %}
         <a href="{{ 'character_page/' + c['名字']|string }}">
-            <div class="col-md-3">
-                    <img id="logo-unknown-{{c.id|string}}" class="character-img border"
+            <div class="col-md-3 div-character-box">
+                <img class="character-img border"  id="character-{{loop.index}}"
                     src="{{url_for('static', filename='character_logo/' + c['名字'] + '.png')}}"
                     width=128 height=128>
-            <p>{{c['名字']}}</p>
+                <p class="p-character" id='character-text-{{loop.index}}'>{{c['名字']}}-<span id='span-camp-{{loop.index}}'></span>阵营</p>
             </div>
         </a>
+        <script>
+            var camp;
+            var color;
+            switch ("{{ c['起始阵营'] }}") {
+            case "待定":
+                color = "gray";
+                camp = "待定";
+                break;
+            case "第三方":
+                color = "green";
+                camp = "第三方";
+                break;
+            case "好人":
+                if ("{{c['胜利条件']}}" == "随同好人阵营胜利") {
+                    color = "blue";
+                    camp = "好人";
+                } else {
+                    color = "gray";
+                    camp = "待定";
+                }
+                break;
+            case "狼人":
+                color = "red";
+                camp = "狼人";
+                break;
+            default:
+                break;
+            };
+            $("#character-{{loop.index}}").css("border-color", color);
+            $("#character-text-{{loop.index}}").css("color", color);
+            $("#span-camp-{{loop.index}}").text(camp);
+        </script>
         {% endfor %}
     </div>
 </div>
+
+
 
 
 {% endblock %}
