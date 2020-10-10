@@ -85,6 +85,19 @@ table, th, td {
     vertical-align: top;
   }
   
-  .navbar {
+.navbar {
     text-align: center;
-  }
+}
+
+.character-img {
+    border: 1px;
+    border-style: solid;
+}
+
+#span-plot {
+    font-style: italic;
+}
+
+#span-note {
+    font-style: italic;
+}
