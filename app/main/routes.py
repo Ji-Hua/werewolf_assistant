@@ -1,19 +1,9 @@
-from urllib.parse import unquote
+from flask import render_template
 
-from flask import render_template, flash, redirect, url_for, request, \
-    jsonify, copy_current_request_context, session
-from flask_login import current_user, login_user, logout_user, login_required
-
-from werkzeug.urls import url_parse
-
-from app import db, login
-from app.forms import CreateGameForm
 from app.main import bp
-from app.models import User, Room, Player
 
 @bp.route('/', methods=['GET', 'POST'])
 @bp.route('/index', methods=['GET', 'POST'])
-@login_required
 def index():      
     return render_template('index.html', title='首页')
 
