@@ -8,11 +8,43 @@ from flask_login import current_user, login_user, logout_user, login_required
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
 
-from app import socketio, db
-from app.forms import TemplateForm
+from app import socketio, db, login
+from app.forms import TemplateForm, CreateGameForm
 from app.game import bp
 from app.models import User, Vote, Game, Room, Player
 from app.tools import random_with_n_digits
+
+
+@bp.route('/game', methods=['GET', 'POST'])
+@login_required
+def game():
+    form = CreateGameForm()
+    if current_user.is_authenticated:
+        if form.validate():
+            if form.create_game.data:
+                next_page = url_for('game.setup')
+                return redirect(next_page)
+            if form.enter_game.data:
+                # TODO: should validate room_name here
+                room = Room.query.filter_by(name=form.room_name.data).first()
+                player = Player(user_id=current_user.id, room_id=room.id, is_host=False)
+                db.session.add(player)
+                db.session.commit()
+                next_page = url_for('game.room', room_name=room.name)
+                return redirect(next_page)
+        
+    return render_template('game/game.html', title='游戏', form=form)
+
+
+# TODO: add logging and email
+@bp.app_errorhandler(404)
+def page_not_found(e):
+    return render_template('errors/404.html'), 404
+
+@bp.app_errorhandler(500)
+def internal_server_error(e):
+    return render_template('errors/500.html'), 500
+
 
 
 @bp.route('/setup', methods=['GET', 'POST'])

@@ -11,39 +11,39 @@
             width=256 height=256>
         </div>
     
-    <div class="col-lg">
-        <h3>{{character['名字']}}</h4>
-        {% if character['台词'] %}
-        <p>「<span id='span-plot'>{{character['台词']}}</span>」</p>
-        {% endif %}
-        <br>
-        <p>
-            【身份属性】 
-            {% for s in character['身份属性'] %}
-            {{s}} 
+        <div class="col-lg">
+            <h3>{{character['名字']}}</h4>
+            {% if character['台词'] %}
+            <p>「<span id='span-plot'>{{character['台词']}}</span>」</p>
+            {% endif %}
+            <br>
+            <p>
+                【身份属性】 
+                {% for s in character['身份属性'] %}
+                {{s}} 
+                {% endfor %}
+            </p>
+            {% if character['起始阵营'] %}
+            <p>【起始阵营】<span id='p-original-camp'>{{character['起始阵营']}}</span></p>
+            {% endif %}
+            {% if character['胜利条件'] %}
+            <p>【胜利条件】<span id='p-victory-camp'>{{character['胜利条件']}}</span></p>
+            {% endif %}
+            {% if character['技能'] %}
+            <h4>--技能--</h4> 
+            {% for s in character['技能'] %}
+            <p>【<span>{{s['名称']}}</span>】  {{s['说明']}}</p>
             {% endfor %}
-        </p>
-        {% if character['起始阵营'] %}
-        <p>【起始阵营】<span id='p-original-camp'>{{character['起始阵营']}}</span></p>
-        {% endif %}
-        {% if character['胜利条件'] %}
-        <p>【胜利条件】<span id='p-victory-camp'>{{character['胜利条件']}}</span></p>
-        {% endif %}
-        {% if character['技能'] %}
-        <h4>--技能--</h4> 
-        {% for s in character['技能'] %}
-        <p>【<span>{{s['名称']}}</span>】  {{s['说明']}}</p>
-        {% endfor %}
-        {% endif %}
-        <br>
-        {% if character['背景'] %}
-        <p><span id='line-background'>{{character['背景']}}</span></p>
-        {% endif %}
-        <br>
-        {% if character['注释'] %}
-        <p>注：<span id='span-note'>{{character['注释']}}</span></p>
-        {% endif %}
-    </div>
+            {% endif %}
+            <br>
+            {% if character['背景'] %}
+            <p><span id='line-background'>{{character['背景']}}</span></p>
+            {% endif %}
+            <br>
+            {% if character['注释'] %}
+            <p>注：<span id='span-note'>{{character['注释']}}</span></p>
+            {% endif %}
+        </div>
     </div>
     
 </div>

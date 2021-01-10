@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"name": "werewolf_game",
+			"path": "../../../werewolf_game"
+		},
+		{
+			"name": "werewolf_data",
+			"path": "../../../werewolf_data"
+		},
+		{
+			"name": "simulator",
+			"path": "../../../simulator"
+		},
+		{
+			"name": "werewolf_assistant",
+			"path": "../.."
+		}
+	],
+	"settings": {}
+}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+    <p>请选择你的行动</p>
+    <form action="" method="post">
+        {{ form.csrf_token }}
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.room_name.label }}<br>
+            {{ form.room_name }}<br>
+            {% for error in form.room_name.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>{{ form.enter_game() }}</p>
+        <p>{{ form.create_game() }}</p>
+    </form>
+{% endblock %}
