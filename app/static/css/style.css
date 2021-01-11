@@ -102,6 +102,10 @@ table, th, td {
     font-style: italic;
 }
 
+.index-text {
+    font-size: 18px;
+}
+
 #content-wrapper {
     position: relative;
     min-height: 100vh;
