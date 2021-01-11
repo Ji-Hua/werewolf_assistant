@@ -101,3 +101,20 @@ table, th, td {
 #span-note {
     font-style: italic;
 }
+
+#content-wrapper {
+    position: relative;
+    min-height: 100vh;
+}
+
+#page-content-wrapper {
+    padding-bottom: 2.5rem;
+}
+
+#footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 2.5rem;
+    margin: 25px 0 0 0 !important;
+}

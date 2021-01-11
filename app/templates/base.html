@@ -56,13 +56,23 @@
 
 
 {% block content %}
+<div id='content-wrapper'>
+    <div id='page-content-wrapper'>
+        {% block page_content %}
+        {% endblock %}
+    </div>
 
-    {% block page_content %}
-    {% endblock %}
 
     {% block footer %}
-        <footer> <small>&copy; Copyright 2019-2021, Lanke Board Game Club</small> </footer> 
+        <footer id='footer'>
+            <div class="banner">
+                <p class="bannertext">烂柯游艺社 Email: werewolf.assistant@gmail.com</p>
+                <p class="bannertext"><small>&copy; Copyright 2019-2021, Lanke Board Game Club</small></p>
+            </div>
+        </footer> 
     {% endblock %}
+    
+</div>
 {% endblock %}
 
 
